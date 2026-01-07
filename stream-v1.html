@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ferma Agents - GLP-1/GIP Partnership Assessment</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    // Icon components to replace lucide-react
+    const Check = ({ size = 16, className = "", strokeWidth = 2 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+    );
+
+    const Pencil = ({ size = 16, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+      </svg>
+    );
+
+    const Play = ({ size = 16, className = "", fill = "none" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <polygon points="5 3 19 12 5 21 5 3" />
+      </svg>
+    );
+
+    const Download = ({ size = 16, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <polyline points="7 10 12 15 17 10" />
+        <line x1="12" y1="15" x2="12" y2="3" />
+      </svg>
+    );
+
+    const Send = ({ size = 16, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <line x1="22" y1="2" x2="11" y2="13" />
+        <polygon points="22 2 15 22 11 13 2 9 22 2" />
+      </svg>
+    );
+
+    // Collapse panel icon - left variant (for Plan panel)
+    const CollapsePanelLeftIcon = ({ size = 16, className = "" }) => (
+      <svg 
+        width={size} 
+        height={size} 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke="currentColor" 
+        strokeWidth="1.5" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+        className={className}
+      >
+        <rect x="3" y="3" width="18" height="18" rx="4" />
+        <line x1="9" y1="3" x2="9" y2="21" />
+      </svg>
+    );
+
+    // Collapse panel icon - right variant (for Chat panel)
+    const CollapsePanelRightIcon = ({ size = 16, className = "" }) => (
+      <svg 
+        width={size} 
+        height={size} 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke="currentColor" 
+        strokeWidth="1.5" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+        className={className}
+      >
+        <rect x="3" y="3" width="18" height="18" rx="4" />
+        <line x1="15" y1="3" x2="15" y2="21" />
+      </svg>
+    );
+
+    // Tooltip component
+    const Tooltip = ({ children, label }) => (
+      <div className="relative group">
+        {children}
+        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-black text-white text-xs font-medium rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+          {label}
+        </div>
+      </div>
+    );
+
+    // Ferma Logo component
+    const FermaLogo = ({ size = 24, color = "#7B61FF", variant = "filled" }) => (
+      <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+        {variant === "filled" ? (
+          <>
+            <rect width="32" height="32" rx="8" fill={color} />
+            <path d="M8 10h16v2.5H11v3h10v2.5H11v6H8V10z" fill="white" />
+          </>
+        ) : (
+          <>
+            <rect width="32" height="32" rx="8" fill="white" stroke={color} strokeWidth="2" />
+            <path d="M8 10h16v2.5H11v3h10v2.5H11v6H8V10z" fill={color} />
+          </>
+        )}
+      </svg>
+    );
+
+    // Slide Layout component for consistent professional design
+    const SlideLayout = ({ children, title, subtitle, slideNum, totalSlides = 10, variant = 'default' }) => (
+      <div className="h-full flex flex-col bg-white">
+        {/* Header bar with accent stripe */}
+        <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg, #7B61FF 0%, #9F8FFF 50%, #7B61FF 100%)' }} />
+        
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-2 border-b border-black/5">
+          <div className="flex items-center gap-2">
+            <FermaLogo size={20} color="#7B61FF" />
+            <span className="text-black/40 font-medium text-xs tracking-widest uppercase">Ferma</span>
+          </div>
+          <span className="text-black/30 text-xs">Confidential</span>
+        </div>
+        
+        {/* Title area */}
+        {title && (
+          <div className="px-5 pt-3 pb-2">
+            <h2 className="text-xs font-bold text-black">{title}</h2>
+            {subtitle && <p className="text-xs text-black/50 mt-0.5">{subtitle}</p>}
+          </div>
+        )}
+        
+        {/* Content */}
+        <div className="flex-1 px-5 pb-2">
+          {children}
+        </div>
+        
+        {/* Footer */}
+        <div className="flex items-center justify-between px-5 py-2 border-t border-black/5 bg-black/[0.02]">
+          <span className="text-black/40 text-xs">GLP-1/GIP Partnership Assessment</span>
+          <div className="flex items-center gap-4">
+            <span className="text-black/40 text-xs">December 2025</span>
+            <span className="text-black/40 text-xs font-medium">{slideNum} / {totalSlides}</span>
+          </div>
+        </div>
+      </div>
+    );
+
+    // Design tokens
+    const ACCENT = '#7B61FF';
+    const accentBg = { backgroundColor: ACCENT };
+
+    // Slide design tokens
+    const slideStyles = {
+      headerBg: 'linear-gradient(135deg, #7B61FF 0%, #5B45CC 100%)',
+      accentGradient: 'linear-gradient(90deg, #7B61FF 0%, #9F8FFF 100%)',
+    };
+
+    // Subtle dot pattern for dark backgrounds - next gen look
+    const darkBgPattern = {
+      backgroundColor: '#000',
+      backgroundImage: `
+        radial-gradient(rgba(123, 97, 255, 0.15) 1px, transparent 1px)
+      `,
+      backgroundSize: '16px 16px',
+    };
+
+    // Typography scale (px) - 11px primary
+    const type = {
+      xs: { fontSize: '10px', lineHeight: '13px' },      // small labels, metadata
+      sm: { fontSize: '11px', lineHeight: '15px' },      // secondary text
+      base: { fontSize: '11px', lineHeight: '15px' },    // body text
+      md: { fontSize: '12px', lineHeight: '15px' },      // emphasis
+      lg: { fontSize: '13px', lineHeight: '17px' },      // section titles
+      xl: { fontSize: '13px', lineHeight: '17px' },      // header title
+      '2xl': { fontSize: '13px', lineHeight: '17px' },   // page title
+    };
+
+    function FermaAgents() {
+      const [activeTab, setActiveTab] = useState('exec');
+      const [chatInput, setChatInput] = useState('');
+      const [planCollapsed, setPlanCollapsed] = useState(false);
+      const [chatCollapsed, setChatCollapsed] = useState(false);
+      const [expandedSection, setExpandedSection] = useState(1); // Default to Data section expanded
+      const [currentPage, setCurrentPage] = useState(1);
+      const [selectedAlert, setSelectedAlert] = useState(0);
+      const [currentSlide, setCurrentSlide] = useState(1);
+      const recordsPerPage = 10;
+
+      const planSections = [
+        {
+          title: 'Objective',
+          steps: [
+            { title: 'Identify GLP-1/GIP/GCG assets (Phase 1b–3) that combine superior efficacy with available commercial rights. Focus on partners where a deal is highly probable due to financial constraints or strategic gaps.' },
+          ]
+        },
+        {
+          title: 'Data',
+          steps: [
+            { title: 'Target identification & rights', description: 'Aggregate Ph1b–3 assets from ClinicalTrials.gov and EudraCT. Drop programs with no update in 12mo. Verify ownership via 10-K "Collaborations" section (public) or press releases (private). Confirm full global rights with no regional carve-outs.' },
+            { title: 'Scientific review', description: 'Evaluate efficacy vs. current SOC—prioritize superior weight loss or glycemic control. Weight secondary benefits: oral delivery, muscle preservation, improved safety (lower nausea/vomiting). Verify claims via peer-reviewed data or conference posters. Pass on "me-too" assets.' },
+            { title: 'Financial position & seller motivation', description: 'For public cos: calculate cash runway from 10-Q, target <12mo operating cash. For private: flag no Series A/B raise in 18mo and no IPO filing. These companies will need a partner to complete late-stage trials.' },
+          ]
+        },
+        {
+          title: 'Alerts',
+          steps: [
+            { title: 'Strategic signal monitoring', description: 'Monitor 8-K filings for investment bank engagement or language shift to "exploring strategic alternatives." Track exec moves: CBO hire or CMO departure signals pivot from research to deal-making within 6–12mo.' },
+          ]
+        },
+        {
+          title: 'Reports',
+          steps: [
+            { title: 'Valuation & deal prioritization', description: 'Rank targets by financial necessity × clinical data quality. Set baseline valuation using recent comparable transactions, adjusted for stage. For top targets, produce a one-slide deal report: investment thesis, efficacy benchmarks, and financial context for rapid exec review.' },
+          ]
+        },
+      ];
+
+      // Raw data - structured per plan methodology
+      // Target identification: Ph1b-3 from ClinicalTrials.gov, verified via 10-K/press releases
+      // Scientific review: Efficacy vs SOC (semaglutide 2.4mg = 15% weight loss benchmark), secondary benefits
+      // Financial position: Cash runway from 10-Q, seller motivation signals
+      const rawData = [
+        { id: 1, company: 'Eli Lilly', drug: 'Retatrutide', target: 'GLP-1/GIP/GCG', phase: 'Phase 3', efficacyVsSoc: '+9.2% vs SOC', efficacyNote: '24.2% weight loss', secondaryBenefits: 'Triple agonist, superior efficacy', dataSource: 'NEJM 2023', rights: 'Not available', rightsSource: '10-K: internal development', cashRunway: '>36 mo', sellerMotivation: 'None—core asset', dealLikelihood: 'None', updated: '2025-12-15' },
+        { id: 2, company: 'Eli Lilly', drug: 'Orforglipron', target: 'GLP-1', phase: 'Phase 3', efficacyVsSoc: '-0.3% vs SOC', efficacyNote: '14.7% weight loss', secondaryBenefits: 'Oral delivery', dataSource: 'Lancet 2023', rights: 'Not available', rightsSource: '10-K: internal development', cashRunway: '>36 mo', sellerMotivation: 'None—first-mover oral priority', dealLikelihood: 'None', updated: '2025-12-14' },
+        { id: 3, company: 'Novo Nordisk', drug: 'CagriSema', target: 'GLP-1/Amylin', phase: 'Phase 3', efficacyVsSoc: '+7.7% vs SOC', efficacyNote: '22.7% weight loss', secondaryBenefits: 'Muscle preservation', dataSource: 'ADA 2024 poster', rights: 'Not available', rightsSource: '10-K: internal development', cashRunway: '>36 mo', sellerMotivation: 'None—flagship next-gen', dealLikelihood: 'None', updated: '2025-12-11' },
+        { id: 4, company: 'Amgen', drug: 'MariTide', target: 'GLP-1/GIPR', phase: 'Phase 2', efficacyVsSoc: '-0.5% vs SOC', efficacyNote: '14.5% weight loss', secondaryBenefits: 'Monthly dosing, muscle preservation', dataSource: 'ObesityWeek 2024', rights: 'Regional possible', rightsSource: 'Q3 call: "open to regional structures"', cashRunway: '>36 mo', sellerMotivation: 'No financial pressure', dealLikelihood: 'Medium', updated: '2025-12-08' },
+        { id: 5, company: 'Viking', drug: 'VK2735 (SC)', target: 'GLP-1/GIP', phase: 'Phase 2b', efficacyVsSoc: '-0.3% vs SOC', efficacyNote: '14.7% weight loss', secondaryBenefits: 'Dual agonist, oral in development', dataSource: 'ObesityWeek 2024', rights: 'Global available', rightsSource: '10-K: "retain worldwide rights"', cashRunway: '11 mo', sellerMotivation: 'CEO Q4: "exploring strategic alternatives"', dealLikelihood: 'High', updated: '2025-12-09' },
+        { id: 6, company: 'Viking', drug: 'VK2735 (Oral)', target: 'GLP-1/GIP', phase: 'Phase 1b', efficacyVsSoc: 'TBD', efficacyNote: 'Ph1 ongoing', secondaryBenefits: 'Oral delivery, dual agonist', dataSource: 'Phase 1 interim', rights: 'Global available', rightsSource: '10-K: "retain worldwide rights"', cashRunway: '11 mo', sellerMotivation: 'Bundle with SC in any deal', dealLikelihood: 'High', updated: '2025-12-07' },
+        { id: 7, company: 'Pfizer', drug: 'Danuglipron', target: 'GLP-1', phase: 'Phase 2b', efficacyVsSoc: '-4.0% vs SOC', efficacyNote: '11.0% weight loss', secondaryBenefits: 'Oral delivery', dataSource: 'ENDO 2024', rights: 'Not available', rightsSource: '10-K: internal development', cashRunway: '>36 mo', sellerMotivation: 'None—internal priority despite setbacks', dealLikelihood: 'None', updated: '2025-12-05' },
+        { id: 8, company: 'Roche', drug: 'CT-996', target: 'GLP-1', phase: 'Phase 2', efficacyVsSoc: 'TBD', efficacyNote: 'Ph2 ongoing', secondaryBenefits: 'Oral delivery', dataSource: 'Carmot Ph1 data', rights: 'Not available', rightsSource: 'Acquired via Carmot Dec 2023', cashRunway: '>36 mo', sellerMotivation: 'None—just acquired', dealLikelihood: 'None', updated: '2025-12-03' },
+        { id: 9, company: 'Boehringer', drug: 'BI 456906', target: 'GLP-1/GCG', phase: 'Phase 2', efficacyVsSoc: '-1.4% vs SOC', efficacyNote: '13.6% weight loss', secondaryBenefits: 'Dual agonist', dataSource: 'Diabetes Care 2023', rights: 'Not available', rightsSource: 'Zealand partnership (Oct 2023)', cashRunway: '>36 mo', sellerMotivation: 'None—partnered', dealLikelihood: 'None', updated: '2025-11-28' },
+        { id: 10, company: 'Zealand', drug: 'Petrelintide', target: 'Amylin', phase: 'Phase 2', efficacyVsSoc: '-4.6% vs SOC', efficacyNote: '10.4% weight loss', secondaryBenefits: 'Muscle preservation', dataSource: 'ADA 2024 poster', rights: 'Ex-US available', rightsSource: 'Q3 call: BI has US only', cashRunway: '18 mo', sellerMotivation: 'Efficacy below SOC—limited interest', dealLikelihood: 'Low', updated: '2025-11-25' },
+        { id: 11, company: 'Altimmune', drug: 'Pemvidutide', target: 'GLP-1/GCG', phase: 'Phase 2b', efficacyVsSoc: '+0.6% vs SOC', efficacyNote: '15.6% weight loss', secondaryBenefits: 'Dual agonist, NASH indication', dataSource: 'EASL 2024', rights: 'Global available', rightsSource: '10-K: "seeking development partner"', cashRunway: '9 mo', sellerMotivation: 'Q3: "capital-efficient path forward"', dealLikelihood: 'High', updated: '2025-11-22' },
+        { id: 12, company: 'Structure', drug: 'GSBR-1290', target: 'GLP-1', phase: 'Phase 2', efficacyVsSoc: '-7.0% vs SOC', efficacyNote: '8.0% weight loss', secondaryBenefits: 'Oral delivery', dataSource: 'ObesityWeek 2024', rights: 'Global available', rightsSource: '10-K: no partnerships disclosed', cashRunway: '14 mo', sellerMotivation: 'Efficacy below SOC—me-too asset', dealLikelihood: 'Low', updated: '2025-11-20' },
+        { id: 13, company: 'Terns', drug: 'TERN-601', target: 'GLP-1', phase: 'Phase 1b', efficacyVsSoc: 'TBD', efficacyNote: 'Ph1 ongoing', secondaryBenefits: 'Oral delivery', dataSource: 'Phase 1 interim', rights: 'Global available', rightsSource: '10-K: no partnerships disclosed', cashRunway: '16 mo', sellerMotivation: 'Too early—watch Ph1 readout', dealLikelihood: 'Medium', updated: '2025-11-18' },
+        { id: 14, company: 'Innovent', drug: 'IBI362 (Mazdutide)', target: 'GLP-1/GCG', phase: 'Phase 3', efficacyVsSoc: '+3.6% vs SOC', efficacyNote: '18.6% weight loss', secondaryBenefits: 'Dual agonist, China Ph3 complete', dataSource: 'Lancet 2024', rights: 'Ex-China available', rightsSource: 'PR Dec 2024: Centerview mandated', cashRunway: '24 mo', sellerMotivation: '8-K: Hired Centerview—active process', dealLikelihood: 'High', updated: '2025-11-12' },
+        { id: 15, company: 'Sciwind', drug: 'XW004', target: 'GLP-1', phase: 'Phase 2', efficacyVsSoc: '-2.7% vs SOC', efficacyNote: '12.3% weight loss', secondaryBenefits: 'None differentiated', dataSource: 'ADA 2024 poster', rights: 'Ex-China available', rightsSource: 'Q2 call: "ex-China rights available"', cashRunway: '10 mo', sellerMotivation: 'Q2: "seeking right partner"', dealLikelihood: 'Medium', updated: '2025-11-10' },
+        { id: 16, company: 'Hanmi', drug: 'Efinopegdutide', target: 'GLP-1/GCG', phase: 'Phase 2', efficacyVsSoc: '-4.7% vs SOC', efficacyNote: '10.3% weight loss', secondaryBenefits: 'NASH indication', dataSource: 'EASL 2023', rights: 'Ex-Korea available', rightsSource: 'Sanofi deal validates model', cashRunway: '22 mo', sellerMotivation: 'Sanofi deal done—may do more', dealLikelihood: 'Medium', updated: '2025-11-08' },
+        { id: 17, company: 'Eccogene', drug: 'ECC5004', target: 'GLP-1', phase: 'Phase 1b', efficacyVsSoc: 'TBD', efficacyNote: 'Ph1 ongoing', secondaryBenefits: 'Oral delivery', dataSource: 'Phase 1 interim', rights: 'Ex-China available', rightsSource: 'AZ deal Dec 2024 for other asset', cashRunway: '18 mo', sellerMotivation: 'AZ deal validates—likely open to more', dealLikelihood: 'Medium', updated: '2025-11-05' },
+        { id: 18, company: 'Sun Pharma', drug: 'GL0034', target: 'GLP-1', phase: 'Phase 1b', efficacyVsSoc: 'TBD', efficacyNote: 'Ph1 ongoing', secondaryBenefits: 'None reported', dataSource: 'ClinicalTrials.gov', rights: 'Global available', rightsSource: '10-K: no partnerships disclosed', cashRunway: '>36 mo', sellerMotivation: 'None—focused on India/EM', dealLikelihood: 'Low', updated: '2025-11-02' },
+      ];
+
+      const totalPages = Math.ceil(rawData.length / recordsPerPage);
+      const paginatedData = rawData.slice((currentPage - 1) * recordsPerPage, currentPage * recordsPerPage);
+
+      // Alerts data - Strategic signal monitoring per plan
+      // Track: 8-K filings, "exploring strategic alternatives" language, banker engagement, CBO/CMO moves
+      const alertsData = [
+        {
+          id: 1,
+          date: 'Dec 23',
+          type: 'Strategic signal',
+          headline: 'VKTX: CEO shifts to "exploring strategic alternatives"',
+          content: [
+            "CEO Brian Lian on Q4 call: 'exploring strategic alternatives for VK2735 as we approach Phase 3.' Notes 'significant inbound interest from potential partners.'",
+            "Language shift from 'operational execution' to 'strategic alternatives' — per plan, this signals 6–12 month deal window.",
+            "11mo cash runway + Ph3 costs ahead. Company will require partner to complete late-stage trials."
+          ],
+          source: 'Viking Q4 Earnings Transcript',
+          sourceDate: 'December 23, 2025',
+          sourceTitle: 'Q4 2025 Earnings Call',
+          sourceUrl: 'vikingtherapeutics.com/investors'
+        },
+        {
+          id: 2,
+          date: 'Dec 21',
+          type: 'Comparable transaction',
+          headline: 'Roche closes Carmot $2.7B — sets valuation comp',
+          content: [
+            "Roche completes Carmot acquisition. $2.7B all-upfront. Assets: CT-996 (oral, Ph2), CT-388 (inj, Ph1).",
+            "Establishes baseline valuation for Ph1/2 oral GLP-1 assets. Roche now out of market as buyer.",
+            "Adjust Viking valuation range: $1.5-2.5B reasonable vs this comparable at similar stage."
+          ],
+          source: 'Roche Press Release',
+          sourceDate: 'December 21, 2025',
+          sourceTitle: 'Carmot Acquisition Complete',
+          sourceUrl: 'roche.com/media'
+        },
+        {
+          id: 3,
+          date: 'Dec 19',
+          type: 'Clinical readout',
+          headline: 'Altimmune Ph2b: 15.6% weight loss — superior to SOC',
+          content: [
+            "Pemvidutide: 15.6% weight loss (+0.6% vs SOC), 62% NASH resolution. Efficacy above benchmark.",
+            "9mo cash runway. Q3 call: 'capital-efficient path forward' — seeking partner for late-stage trials.",
+            "NASH indication may limit strategic fit for obesity-focused buyers."
+          ],
+          source: 'Altimmune Press Release',
+          sourceDate: 'December 19, 2025',
+          sourceTitle: 'IMPACT Ph2b Topline',
+          sourceUrl: 'altimmune.com/news'
+        },
+        {
+          id: 4,
+          date: 'Dec 17',
+          type: 'Strategic signal',
+          headline: '8-K: Innovent engages Centerview for IBI362 process',
+          content: [
+            "8-K filing: Innovent engages Centerview Partners for ex-China rights to Mazdutide (IBI362).",
+            "Investment bank engagement = active sell-side process. Per plan, banker mandate signals 6–12mo to deal.",
+            "+3.6% efficacy vs SOC (18.6% weight loss). Ex-China rights available. 3-6mo window to engage."
+          ],
+          source: '8-K Filing / Endpoints News',
+          sourceDate: 'December 17, 2025',
+          sourceTitle: 'Innovent Strategic Process',
+          sourceUrl: 'sec.gov/cgi-bin/browse-edgar'
+        },
+        {
+          id: 5,
+          date: 'Dec 15',
+          type: 'Clinical readout',
+          headline: 'Zealand Ph2: 10.4% weight loss — below SOC, deprioritize',
+          content: [
+            "Petrelintide: 10.4% at 26wk. -4.6% vs SOC benchmark. Fails scientific review criteria.",
+            "Me-too asset: amylin mechanism not differentiated vs dual/triple agonists at 15-25%.",
+            "Remove from active tracking. Rights available but efficacy below threshold."
+          ],
+          source: 'Zealand Press Release',
+          sourceDate: 'December 15, 2025',
+          sourceTitle: 'Petrelintide Ph2 Results',
+          sourceUrl: 'zealandpharma.com'
+        },
+        {
+          id: 6,
+          date: 'Dec 12',
+          type: 'Comparable transaction',
+          headline: 'AZN licenses Eccogene ex-China $150M upfront',
+          content: [
+            "AstraZeneca: $150M upfront + $1.2B milestones for ECC5004 ex-China rights (oral GLP-1, Ph1b).",
+            "Sets comparable valuation for China-origin, ex-China deals at Ph1 stage.",
+            "AZN remains active buyer. Eccogene may do additional deals—monitor."
+          ],
+          source: 'AstraZeneca Press Release',
+          sourceDate: 'December 12, 2025',
+          sourceTitle: 'Eccogene License Agreement',
+          sourceUrl: 'astrazeneca.com/media'
+        },
+      ];
+
+      return (
+        <div 
+          className="h-screen flex flex-col"
+          style={{ 
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            ...darkBgPattern
+          }}
+        >
+          {/* Header */}
+          <header 
+            className="h-14 px-5 flex items-center justify-between flex-shrink-0"
+            style={darkBgPattern}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-md flex items-center justify-center" style={accentBg}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                  <path d="M2 17l10 5 10-5" />
+                  <path d="M2 12l10 5 10-5" />
+                </svg>
+              </div>
+              <span 
+                className="font-semibold text-white"
+                style={type.xl}
+              >
+                GLP-1/GIP Partnership Target Assessment
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <Tooltip label="Share">
+                <button 
+                  className="h-8 px-3 bg-white/10 border border-white/20 rounded-md font-medium text-white hover:bg-white/20"
+                  style={type.sm}
+                >
+                  Share
+                </button>
+              </Tooltip>
+              <div 
+                className="w-8 h-8 rounded-full flex items-center justify-center text-white font-medium"
+                style={{ ...accentBg, ...type.xs }}
+              >
+                VM
+              </div>
+            </div>
+          </header>
+
+          <div className="flex flex-1 overflow-hidden">
+            {/* Left Sidebar - Plan */}
+            <aside 
+              className={`flex flex-col flex-shrink-0 transition-all duration-300 ${planCollapsed ? 'w-10 pl-2 pr-1' : 'pl-4 pr-3'}`}
+              style={{ ...darkBgPattern, width: planCollapsed ? undefined : '300px' }}
+            >
+              {/* Plan Header */}
+              <div className={`h-12 mt-3 flex items-center flex-shrink-0 ${planCollapsed ? 'justify-center' : 'justify-between'}`}>
+                {!planCollapsed && (
+                  <span 
+                    className="h-7 px-3 rounded text-white font-medium flex items-center"
+                    style={{ ...accentBg, ...type.sm }}
+                  >
+                    Plan
+                  </span>
+                )}
+                {!planCollapsed ? (
+                  <div className="flex items-center gap-1">
+                    <Tooltip label="Edit plan">
+                      <button className="h-7 w-7 flex items-center justify-center text-white hover:opacity-70">
+                        <Pencil size={15} />
+                      </button>
+                    </Tooltip>
+                    <Tooltip label="Execute all">
+                      <button className="h-7 w-7 flex items-center justify-center text-white hover:opacity-70">
+                        <Play size={15} fill="currentColor" />
+                      </button>
+                    </Tooltip>
+                    <Tooltip label="Collapse plan">
+                      <button 
+                        onClick={() => setPlanCollapsed(!planCollapsed)}
+                        className="h-7 w-7 flex items-center justify-center text-white hover:opacity-70"
+                      >
+                        <CollapsePanelLeftIcon size={16} />
+                      </button>
+                    </Tooltip>
+                  </div>
+                ) : (
+                  <Tooltip label="Expand plan">
+                    <button 
+                      onClick={() => setPlanCollapsed(!planCollapsed)}
+                      className="h-7 w-7 flex items-center justify-center text-white hover:opacity-70"
+                    >
+                      <CollapsePanelLeftIcon size={16} />
+                    </button>
+                  </Tooltip>
+                )}
+              </div>
+              
+              {/* Plan Sections */}
+              {!planCollapsed && (
+                <div className="flex-1 overflow-auto py-3">
+                  {planSections.map((section, sectionIndex) => {
+                    const isObjective = sectionIndex === 0;
+                    const isExpanded = isObjective || expandedSection === sectionIndex;
+                    
+                    return (
+                    <div key={sectionIndex} className="mb-3">
+                      {/* Section Header */}
+                      <div 
+                        className={`flex items-center gap-2 mb-2 cursor-pointer hover:opacity-80`}
+                        onClick={() => {
+                          if (isObjective) {
+                            // Objective click goes to Exec Summary and collapses other sections
+                            setActiveTab('exec');
+                            setExpandedSection(null);
+                          } else {
+                            setExpandedSection(isExpanded ? null : sectionIndex);
+                            // Sync main tab: sectionIndex 1 = data, 2 = alerts, 3 = reports
+                            const tabMap = { 1: 'data', 2: 'alerts', 3: 'reports' };
+                            if (tabMap[sectionIndex]) setActiveTab(tabMap[sectionIndex]);
+                          }
+                        }}
+                      >
+                        {!isObjective && (
+                          <svg 
+                            width="12" 
+                            height="12" 
+                            viewBox="0 0 24 24" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            strokeWidth="2" 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round"
+                            className={`text-white/40 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                          >
+                            <polyline points="9 18 15 12 9 6" />
+                          </svg>
+                        )}
+                        <span 
+                          className="text-white/40 uppercase tracking-wider font-medium"
+                          style={{ fontSize: '11px' }}
+                        >
+                          {section.title}
+                        </span>
+                        <div className="flex-1 h-px bg-white/10"></div>
+                        {sectionIndex > 0 && isExpanded && (
+                          <Tooltip label={`Execute ${section.title}`}>
+                            <button 
+                              className="w-5 h-5 rounded flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Play size={10} fill="currentColor" />
+                            </button>
+                          </Tooltip>
+                        )}
+                      </div>
+                      
+                      {/* Section Steps - only show if expanded */}
+                      {isExpanded && section.steps.map((step, stepIndex) => (
+                        <div key={stepIndex} className="flex gap-3 ml-1">
+                          {sectionIndex > 0 && (
+                            <div className="flex flex-col items-center">
+                              <div 
+                                className="flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center"
+                                style={accentBg}
+                              >
+                                <Check size={9} className="text-white" strokeWidth={3} />
+                              </div>
+                              {stepIndex < section.steps.length - 1 && (
+                                <div className="w-0.5 flex-1 my-1" style={{ backgroundColor: 'rgba(123, 97, 255, 0.3)' }}></div>
+                              )}
+                            </div>
+                          )}
+                          <div className="pb-3">
+                            {step.description ? (
+                              <>
+                                <h4 
+                                  className="font-medium text-white mb-0.5"
+                                  style={type.xs}
+                                >
+                                  {step.title}
+                                </h4>
+                                <p 
+                                  className="text-white/50"
+                                  style={{ fontSize: '11px', lineHeight: '15px' }}
+                                >
+                                  {step.description}
+                                </p>
+                              </>
+                            ) : (
+                              <p 
+                                className="text-white/80"
+                                style={{ fontSize: '11px', lineHeight: '15px' }}
+                              >
+                                {step.title}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );})}
+                </div>
+              )}
+            </aside>
+
+            {/* Main Area */}
+            <div className="flex-1 bg-black pl-3 overflow-hidden">
+              <div className="h-full bg-white rounded-tl-2xl shadow-lg flex overflow-hidden">
+                
+                {/* Main Content Section */}
+                <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+                  {/* Tabs Bar */}
+                  <div className="h-12 mt-3 px-6 flex items-center justify-between flex-shrink-0">
+                    <div className="flex items-center gap-1">
+                      {['Exec Summary', 'Data', 'Alerts', 'Reports'].map((tab, index) => {
+                        const tabKey = tab.toLowerCase().replace(' ', '');
+                        const isActive = activeTab === (tab === 'Exec Summary' ? 'exec' : tabKey);
+                        return (
+                          <button
+                            key={tab}
+                            onClick={() => {
+                              setActiveTab(tab === 'Exec Summary' ? 'exec' : tabKey);
+                              // Sync plan panel: index 0 = Exec (collapse all), 1 = Data, 2 = Alerts, 3 = Reports
+                              setExpandedSection(index === 0 ? null : index);
+                            }}
+                            className={`h-7 px-3 rounded font-medium transition-colors ${
+                              isActive ? 'text-white' : 'text-black hover:bg-black/5'
+                            }`}
+                            style={{ 
+                              ...(isActive ? accentBg : {}),
+                              ...type.sm
+                            }}
+                          >
+                            {tab}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder="Search..."
+                        className="h-8 w-40 px-3 border border-black/20 rounded text-black placeholder-black/40 focus:outline-none focus:border-violet-400"
+                        style={type.sm}
+                      />
+                      <Tooltip label="Export report">
+                        <button className="h-8 w-8 flex items-center justify-center text-black hover:bg-black/5 rounded">
+                          <Download size={16} />
+                        </button>
+                      </Tooltip>
+                    </div>
+                  </div>
+
+                  {/* Article Content */}
+                  <div className="flex-1 overflow-auto px-8 py-6">
+                    {activeTab === 'exec' && (
+                    <article className="max-w-3xl">
+                      <h2 className="font-semibold text-black" style={type['2xl']}>Move on Viking now — the only target where global rights, financial pressure, and deal signal align</h2>
+                      <p className="text-black/50 mt-1 mb-6" style={type.sm}>
+                        GLP-1/GIP/GCG Partnership Targets • December 2025
+                      </p>
+
+                      {/* THE ANSWER - Lead with recommendation */}
+                      <div className="mb-8 p-5 rounded-xl border-2 border-green-600 bg-green-50">
+                        <p className="text-green-800 font-semibold mb-2" style={type.lg}>Recommendation</p>
+                        <p className="text-green-900 text-xs font-bold mb-3">
+                          Initiate outreach to Viking Therapeutics now.
+                        </p>
+                        <p className="text-green-800 leading-relaxed" style={type.base}>
+                          VK2735 is the only asset where superior efficacy, full global rights, and financial pressure all align. 
+                          CEO signaled "exploring strategic alternatives" on Q4 call. Move before Phase 3 data (H2 2025) de-risks the asset and attracts competing bids.
+                        </p>
+                      </div>
+
+                      {/* WHY - Supporting rationale aligned to plan */}
+                      <div className="mb-8">
+                        <p className="text-black font-semibold mb-4" style={type.md}>Why Viking over other targets</p>
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="border-b-2 border-black/10">
+                              <th className="text-left py-2.5 pr-4 font-semibold text-black/60">Target</th>
+                              <th className="text-left py-2.5 px-4 font-semibold text-black/60">Efficacy vs SOC</th>
+                              <th className="text-left py-2.5 px-4 font-semibold text-black/60">Rights</th>
+                              <th className="text-left py-2.5 px-4 font-semibold text-black/60">Cash Runway</th>
+                              <th className="text-left py-2.5 pl-4 font-semibold text-black/60">Issue</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr className="border-b border-black/5 bg-green-50">
+                              <td className="py-3.5 pr-4">
+                                <span className="font-semibold text-black">VK2735</span>
+                                <span className="text-black/50 block text-xs mt-0.5">Viking • Ph2b</span>
+                              </td>
+                              <td className="py-3.5 px-4"><span className="text-black font-medium">-0.3% vs SOC</span><span className="text-black/50 block text-xs mt-0.5">14.7% weight loss</span></td>
+                              <td className="py-3.5 px-4"><span className="text-green-700 font-medium">Global</span></td>
+                              <td className="py-3.5 px-4"><span className="text-red-600 font-medium">11 mo</span></td>
+                              <td className="py-3.5 pl-4 text-green-700">None — all criteria met</td>
+                            </tr>
+                            <tr className="border-b border-black/5">
+                              <td className="py-3.5 pr-4">
+                                <span className="font-semibold text-black">Pemvidutide</span>
+                                <span className="text-black/50 block text-xs mt-0.5">Altimmune • Ph2b</span>
+                              </td>
+                              <td className="py-3.5 px-4"><span className="text-black font-medium">+0.6% vs SOC</span><span className="text-black/50 block text-xs mt-0.5">15.6% weight loss</span></td>
+                              <td className="py-3.5 px-4"><span className="text-green-700 font-medium">Global</span></td>
+                              <td className="py-3.5 px-4"><span className="text-red-600 font-medium">9 mo</span></td>
+                              <td className="py-3.5 pl-4 text-black/60">NASH indication limits fit</td>
+                            </tr>
+                            <tr className="border-b border-black/5">
+                              <td className="py-3.5 pr-4">
+                                <span className="font-semibold text-black">MariTide</span>
+                                <span className="text-black/50 block text-xs mt-0.5">Amgen • Ph2</span>
+                              </td>
+                              <td className="py-3.5 px-4"><span className="text-black font-medium">-0.5% vs SOC</span><span className="text-black/50 block text-xs mt-0.5">14.5% weight loss</span></td>
+                              <td className="py-3.5 px-4"><span className="text-yellow-600 font-medium">Regional only</span></td>
+                              <td className="py-3.5 px-4"><span className="text-black/60 font-medium">>36 mo</span></td>
+                              <td className="py-3.5 pl-4 text-black/60">No financial pressure</td>
+                            </tr>
+                            <tr className="border-b border-black/5">
+                              <td className="py-3.5 pr-4">
+                                <span className="font-semibold text-black">Mazdutide</span>
+                                <span className="text-black/50 block text-xs mt-0.5">Innovent • Ph3</span>
+                              </td>
+                              <td className="py-3.5 px-4"><span className="text-black font-medium">+3.6% vs SOC</span><span className="text-black/50 block text-xs mt-0.5">18.6% weight loss</span></td>
+                              <td className="py-3.5 px-4"><span className="text-yellow-600 font-medium">Ex-China only</span></td>
+                              <td className="py-3.5 px-4"><span className="text-black/60 font-medium">24 mo</span></td>
+                              <td className="py-3.5 pl-4 text-black/60">Competitive process</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* WHAT - Data summary */}
+                      <div className="mb-8">
+                        <p className="text-black font-semibold mb-4" style={type.md}>The data</p>
+                        <div className="grid grid-cols-3 gap-4">
+                          <div className="p-4 rounded-lg bg-black/[0.02]">
+                            <p className="text-black/50 text-xs mb-1">Efficacy</p>
+                            <p className="text-black font-bold text-sm">14.7% weight loss</p>
+                            <p className="text-black/60 text-xs mt-1">-0.3% vs SOC (Zepbound)</p>
+                          </div>
+                          <div className="p-4 rounded-lg bg-black/[0.02]">
+                            <p className="text-black/50 text-xs mb-1">Rights</p>
+                            <p className="text-black font-bold text-sm">Global available</p>
+                            <p className="text-black/60 text-xs mt-1">10-K confirms worldwide</p>
+                          </div>
+                          <div className="p-4 rounded-lg bg-black/[0.02]">
+                            <p className="text-black/50 text-xs mb-1">Financial</p>
+                            <p className="text-black font-bold text-sm">11 mo runway</p>
+                            <p className="text-black/60 text-xs mt-1">CEO: "exploring alternatives"</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* NEXT - Action items */}
+                      <div className="mb-8">
+                        <p className="text-black font-semibold mb-4" style={type.md}>Next steps</p>
+                        <ol className="space-y-2 text-xs text-black/70">
+                          <li className="flex gap-3">
+                            <span className="font-semibold text-black/50">1.</span>
+                            <span>Identify warm intro path to Viking BD/CEO (Jan 6)</span>
+                          </li>
+                          <li className="flex gap-3">
+                            <span className="font-semibold text-black/50">2.</span>
+                            <span>Initial BD call to gauge interest (Jan 10)</span>
+                          </li>
+                          <li className="flex gap-3">
+                            <span className="font-semibold text-black/50">3.</span>
+                            <span>Draft 1-pager for IC review (Jan 15)</span>
+                          </li>
+                          <li className="flex gap-3">
+                            <span className="font-semibold text-black/50">4.</span>
+                            <span>IC review and approval (Jan 31)</span>
+                          </li>
+                        </ol>
+                      </div>
+                    </article>
+                    )}
+
+                    {activeTab === 'data' && (
+                      <div className="h-full flex flex-col">
+                        <h2 className="font-semibold text-black mb-5" style={type['2xl']}>18 targets evaluated — 3 meet all criteria</h2>
+                        <div className="flex-1 overflow-auto">
+                          <table className="w-full text-xs border-collapse">
+                            <thead className="sticky top-0 bg-white border-b-2 border-black/10 z-10">
+                              <tr>
+                                <th className="text-left py-2.5 px-3 font-semibold text-black/60">Company</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-black/60">Drug</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-black/60">Target</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-black/60">Phase</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-black/60">Efficacy vs SOC</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-black/60">Rights</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-black/60">Cash Runway</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-black/60">Deal Likelihood</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {paginatedData.map((row) => (
+                                <tr key={row.id} className="border-b border-black/5 hover:bg-black/[0.02]">
+                                  <td className="py-2.5 px-3 font-medium text-black">{row.company}</td>
+                                  <td className="py-2.5 px-3 text-black/70">{row.drug}</td>
+                                  <td className="py-2.5 px-3 text-black/60">{row.target}</td>
+                                  <td className="py-2.5 px-3 text-black/60">{row.phase}</td>
+                                  <td className="py-2.5 px-3">
+                                    <span className="text-black/70">{row.efficacyVsSoc}</span>
+                                    <span className="text-black/50 block text-xs mt-0.5">{row.efficacyNote}</span>
+                                  </td>
+                                  <td className="py-2.5 px-3">
+                                    <span className={row.rights === 'Global available' ? 'text-green-700 font-medium' : row.rights === 'Not available' ? 'text-red-600' : 'text-yellow-600'}>
+                                      {row.rights}
+                                    </span>
+                                  </td>
+                                  <td className="py-2.5 px-3">
+                                    <span className={parseInt(row.cashRunway) < 12 ? 'text-red-600 font-medium' : 'text-black/60'}>
+                                      {row.cashRunway}
+                                    </span>
+                                  </td>
+                                  <td className="py-2.5 px-3">
+                                    <span className={`font-medium ${
+                                      row.dealLikelihood === 'High' ? 'text-green-700' : 
+                                      row.dealLikelihood === 'Medium' ? 'text-yellow-600' : 
+                                      'text-black/40'
+                                    }`}>
+                                      {row.dealLikelihood}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                          {/* Pagination */}
+                          <div className="flex items-center justify-between mt-4 px-3">
+                            <span className="text-black/50 text-xs">
+                              Showing {(currentPage - 1) * recordsPerPage + 1} to {Math.min(currentPage * recordsPerPage, rawData.length)} of {rawData.length}
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                                disabled={currentPage === 1}
+                                className="h-7 px-3 border border-black/20 rounded text-black/60 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-black/5"
+                                style={type.sm}
+                              >
+                                Previous
+                              </button>
+                              <span className="text-black/50 text-xs">
+                                Page {currentPage} of {totalPages}
+                              </span>
+                              <button
+                                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                                disabled={currentPage === totalPages}
+                                className="h-7 px-3 border border-black/20 rounded text-black/60 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-black/5"
+                                style={type.sm}
+                              >
+                                Next
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {activeTab === 'reports' && (
+                      <div className="h-full flex flex-col">
+                        <h2 className="font-semibold text-black mb-5" style={type['2xl']}>Deal reports — one-slide summaries for exec review</h2>
+                        <div className="flex-1 overflow-auto">
+                          <div className="h-full">
+                            {/* Slide Container */}
+                            <div className="h-full flex flex-col">
+                              <div className="flex-1 overflow-auto">
+                                <div className="h-full">
+                                  {/* Slide 1: Viking One-Slide Deal Report */}
+                                  {currentSlide === 1 && (
+                                    <SlideLayout title="Viking — VK2735 (SC + Oral)" subtitle="Priority #1: Global rights, financial pressure, deal signal" slideNum={1}>
+                                      <div className="h-full flex gap-3">
+                                        <div className="flex-1 flex flex-col gap-2">
+                                          {/* Investment Thesis */}
+                                          <div className="p-3 rounded-lg bg-green-50">
+                                            <p className="font-medium text-green-800 text-xs mb-1">Investment Thesis</p>
+                                            <p className="text-xs text-green-700">Only target where global rights, financial pressure (11mo runway), and explicit "strategic alternatives" signal all align. Move before Ph3 data (H2 2025) de-risks asset and attracts competing bids.</p>
+                                          </div>
+                                          {/* Efficacy Benchmarks */}
+                                          <div className="p-3 rounded-lg bg-black/[0.02]">
+                                            <p className="font-medium text-black/60 text-xs mb-2">Efficacy (Phase 2b, 13 weeks)</p>
+                                            <div className="grid grid-cols-4 gap-3">
+                                              {[
+                                                { value: '14.7%', label: 'Weight loss' },
+                                                { value: '-0.3%', label: 'vs SOC' },
+                                                { value: 'Ph2b', label: 'Stage' },
+                                                { value: 'Weekly', label: 'SC dosing' },
+                                              ].map((item, i) => (
+                                                <div key={i} className="text-center">
+                                                  <p className="text-sm font-bold text-black">{item.value}</p>
+                                                  <p className="text-xs text-black/50">{item.label}</p>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                          {/* Secondary Benefits */}
+                                          <div className="p-3 rounded-lg bg-black/[0.02]">
+                                            <p className="font-medium text-black/60 text-xs mb-2">Key Points</p>
+                                            <div className="grid grid-cols-2 gap-1 text-xs text-black/70">
+                                              <p>• Dual GLP-1/GIP agonist</p>
+                                              <p>• Oral formulation in Ph1b</p>
+                                              <p>• CEO: "exploring strategic alternatives"</p>
+                                              <p>• 11mo cash runway</p>
+                                            </div>
+                                          </div>
+                                        </div>
+                                        {/* Right sidebar */}
+                                        <div className="w-40 flex flex-col gap-2">
+                                          <div className="p-2 rounded-lg bg-black/[0.02]">
+                                            <p className="font-medium text-black/60 text-xs mb-1">Financial</p>
+                                            <div className="space-y-1 text-xs">
+                                              <div className="flex justify-between"><span className="text-black/50">Runway</span><span className="text-red-600">11 mo</span></div>
+                                              <div className="flex justify-between"><span className="text-black/50">Signal</span><span className="text-black/70">Q4: "alternatives"</span></div>
+                                            </div>
+                                          </div>
+                                          <div className="p-2 rounded-lg bg-black/[0.02]">
+                                            <p className="font-medium text-black/60 text-xs mb-1">Valuation</p>
+                                            <div className="space-y-1 text-xs">
+                                              <div className="flex justify-between"><span className="text-black/50">Comp</span><span className="text-black/70">Roche/Carmot</span></div>
+                                              <div className="flex justify-between"><span className="text-black/50">Range</span><span className="font-bold text-black">$1.5-2.5B</span></div>
+                                            </div>
+                                          </div>
+                                          <div className="p-2 rounded-lg bg-black/[0.02]">
+                                            <p className="font-medium text-black/60 text-xs mb-1">Risks</p>
+                                            <ul className="space-y-0.5 text-xs text-black/60">
+                                              <li>• Ph3 confirmation needed</li>
+                                              <li>• Competitive timing</li>
+                                              <li>• Valuation escalation post-data</li>
+                                            </ul>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </SlideLayout>
+                                  )}
+
+                                  {/* Additional slides would go here - for brevity, I'll include a few key ones */}
+                                  {currentSlide === 2 && (
+                                    <SlideLayout title="Altimmune — Pemvidutide" subtitle="Priority #2: Superior efficacy, NASH indication, global rights" slideNum={2}>
+                                      <div className="h-full flex gap-3">
+                                        <div className="flex-1 flex flex-col gap-2">
+                                          <div className="p-3 rounded-lg bg-blue-50">
+                                            <p className="font-medium text-blue-800 text-xs mb-1">Investment Thesis</p>
+                                            <p className="text-xs text-blue-700">Superior efficacy (+0.6% vs SOC). NASH indication adds optionality. 9mo cash runway. Q3 call: "capital-efficient path forward" — seeking partner.</p>
+                                          </div>
+                                          <div className="p-3 rounded-lg bg-black/[0.02]">
+                                            <p className="font-medium text-black/60 text-xs mb-2">Efficacy (Phase 2b, 48 weeks)</p>
+                                            <div className="grid grid-cols-4 gap-3">
+                                              {[
+                                                { value: '15.6%', label: 'Weight loss' },
+                                                { value: '+0.6%', label: 'vs SOC' },
+                                                { value: '62%', label: 'NASH resolution' },
+                                                { value: 'Weekly', label: 'SC dosing' },
+                                              ].map((item, i) => (
+                                                <div key={i} className="text-center">
+                                                  <p className="text-sm font-bold text-black">{item.value}</p>
+                                                  <p className="text-xs text-black/50">{item.label}</p>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        </div>
+                                        <div className="w-40 flex flex-col gap-2">
+                                          <div className="p-2 rounded-lg bg-black/[0.02]">
+                                            <p className="font-medium text-black/60 text-xs mb-1">Financial</p>
+                                            <div className="space-y-1 text-xs">
+                                              <div className="flex justify-between"><span className="text-black/50">Runway</span><span className="text-red-600">9 mo</span></div>
+                                              <div className="flex justify-between"><span className="text-black/50">Signal</span><span className="text-black/70">Q3: "partner"</span></div>
+                                            </div>
+                                          </div>
+                                          <div className="p-2 rounded-lg bg-black/[0.02]">
+                                            <p className="font-medium text-black/60 text-xs mb-1">Valuation</p>
+                                            <div className="space-y-1 text-xs">
+                                              <div className="flex justify-between"><span className="text-black/50">Comp</span><span className="text-black/70">NASH deals</span></div>
+                                              <div className="flex justify-between"><span className="text-black/50">Range</span><span className="font-bold text-black">$500M-1B</span></div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </SlideLayout>
+                                  )}
+
+                                  {/* Slide navigation placeholder - you can add more slides following the same pattern */}
+                                  {currentSlide > 2 && (
+                                    <SlideLayout title={`Slide ${currentSlide}`} subtitle="Additional content" slideNum={currentSlide}>
+                                      <div className="h-full flex items-center justify-center text-black/40">
+                                        <p>Additional slides would be implemented here following the same pattern</p>
+                                      </div>
+                                    </SlideLayout>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Footer with slide indicator */}
+                        <div className="flex items-center justify-center gap-2 mt-4">
+                          {[1,2,3,4,5,6,7,8,9,10].map(n => (
+                            <button
+                              key={n}
+                              onClick={() => setCurrentSlide(n)}
+                              className={`h-2 rounded-full transition-all ${currentSlide === n ? 'w-8' : 'w-2 hover:bg-black/30'}`}
+                              style={{ background: currentSlide === n ? ACCENT : 'rgba(0,0,0,0.15)' }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeTab === 'alerts' && (
+                      <div className="h-full flex flex-col">
+                        <h2 className="font-semibold text-black mb-5" style={type['2xl']}>Act within 6 months — Viking's "strategic alternatives" signal precedes deals</h2>
+                        <div className="flex-1 flex overflow-hidden">
+                        {/* Alerts List - 50% */}
+                        <div className="w-1/2 flex-shrink-0 overflow-auto">
+                          <div className="pr-6 space-y-2">
+                            {alertsData.map((alert, index) => {
+                              const isSelected = selectedAlert === index;
+                              return (
+                                <div
+                                  key={alert.id}
+                                  onClick={() => setSelectedAlert(index)}
+                                  className={`p-3 rounded-lg cursor-pointer transition-colors border ${
+                                    isSelected ? 'bg-black/[0.04] border-black/20' : 'bg-white border-transparent hover:bg-black/[0.02]'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2 mb-1.5">
+                                    <span className="text-black/40" style={type.xs}>{alert.date}</span>
+                                    <span className="text-black/30">·</span>
+                                    <span className="text-black/40" style={type.xs}>{alert.type}</span>
+                                  </div>
+                                  <p 
+                                    style={{ 
+                                      ...type.sm, 
+                                      lineHeight: '15px',
+                                      color: isSelected ? '#000' : 'rgba(0,0,0,0.7)',
+                                      fontWeight: isSelected ? 500 : 400,
+                                    }}
+                                  >
+                                    {alert.headline}
+                                  </p>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Alert Detail - 50% */}
+                        <div className="w-1/2 overflow-auto border-l border-black/10 pl-8">
+                          {alertsData[selectedAlert] && (
+                            <div>
+                              {/* Header */}
+                              <div className="flex items-center gap-2 mb-4">
+                                <span className="text-black/50" style={type.xs}>{alertsData[selectedAlert].date}</span>
+                                <span className="text-black/30">·</span>
+                                <span className="text-black/50" style={type.xs}>{alertsData[selectedAlert].source}</span>
+                              </div>
+
+                              {/* Headline */}
+                              <h2 className="text-black font-semibold mb-5" style={type['2xl']}>
+                                {alertsData[selectedAlert].headline}
+                              </h2>
+                              
+                              {/* Content */}
+                              <div className="space-y-4 mb-6">
+                                {alertsData[selectedAlert].content.map((paragraph, i) => (
+                                  <p key={i} className="text-black/70 leading-relaxed" style={type.sm}>
+                                    {paragraph}
+                                  </p>
+                                ))}
+                              </div>
+
+                              {/* Source Citation */}
+                              <div className="pt-4 border-t border-black/10">
+                                <p className="text-black/50" style={type.xs}>
+                                  {alertsData[selectedAlert].source}, {alertsData[selectedAlert].sourceDate}
+                                </p>
+                                <a href="#" className="text-black/40 hover:underline" style={type.xs}>
+                                  {alertsData[selectedAlert].sourceUrl} →
+                                </a>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Chat Section */}
+                <div 
+                  className={`border-l border-black/10 flex flex-col flex-shrink-0 transition-all duration-300 ${chatCollapsed ? 'w-10' : ''}`}
+                  style={{ width: chatCollapsed ? undefined : '250px' }}
+                >
+                  {/* Chat Header */}
+                  <div className={`h-12 mt-3 px-4 flex items-center flex-shrink-0 ${chatCollapsed ? 'justify-center px-0' : 'justify-between'}`}>
+                    {!chatCollapsed && (
+                      <span 
+                        className="h-7 px-3 rounded text-white font-medium flex items-center"
+                        style={{ ...accentBg, ...type.sm }}
+                      >
+                        Chat
+                      </span>
+                    )}
+                    {!chatCollapsed ? (
+                      <div className="flex items-center gap-1">
+                        <Tooltip label="New chat">
+                          <button className="h-7 w-7 flex items-center justify-center text-black hover:opacity-70">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M12 5v14M5 12h14" />
+                            </svg>
+                          </button>
+                        </Tooltip>
+                        <Tooltip label="Chat history">
+                          <button className="h-7 w-7 flex items-center justify-center text-black hover:opacity-70">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="12" cy="12" r="10" />
+                              <polyline points="12 6 12 12 16 14" />
+                            </svg>
+                          </button>
+                        </Tooltip>
+                        <Tooltip label="Collapse chat">
+                          <button 
+                            onClick={() => setChatCollapsed(!chatCollapsed)}
+                            className="h-7 w-7 flex items-center justify-center text-black hover:opacity-70"
+                          >
+                            <CollapsePanelRightIcon size={16} />
+                          </button>
+                        </Tooltip>
+                      </div>
+                    ) : (
+                      <Tooltip label="Expand chat">
+                        <button 
+                          onClick={() => setChatCollapsed(!chatCollapsed)}
+                          className="h-7 w-7 flex items-center justify-center text-black hover:opacity-70"
+                        >
+                          <CollapsePanelRightIcon size={16} />
+                        </button>
+                      </Tooltip>
+                    )}
+                  </div>
+                  
+                  {/* Chat Messages */}
+                  {!chatCollapsed && (
+                    <>
+                      <div className="flex-1 overflow-auto px-4 py-3 space-y-4">
+                        {/* Q&A 1 */}
+                        <div className="flex flex-col items-end">
+                          <div 
+                            className="bg-black/5 text-black rounded-lg px-3 py-2.5"
+                            style={type.sm}
+                          >
+                            Why is Viking prioritized over Amgen's MariTide?
+                          </div>
+                          <span className="text-black/50 mt-1.5" style={type.xs}>2:34 PM</span>
+                        </div>
+                        
+                        <div className="flex flex-col">
+                          <p className="text-black" style={{ ...type.sm, lineHeight: '15px' }}>
+                            Viking offers global rights availability vs regional-only for MariTide. Viking's smaller market cap (~$8B) makes a full acquisition feasible, while Amgen would likely only consider co-development. VK2735 also has both SC and oral formulations in development.
+                          </p>
+                          <span className="text-black/50 mt-1.5" style={type.xs}>2:35 PM</span>
+                        </div>
+                        
+                        {/* Q&A 2 */}
+                        <div className="flex flex-col items-end">
+                          <div 
+                            className="bg-black/5 text-black rounded-lg px-3 py-2.5"
+                            style={type.sm}
+                          >
+                            What's the risk if we wait until Phase 3 data?
+                          </div>
+                          <span className="text-black/50 mt-1.5" style={type.xs}>2:42 PM</span>
+                        </div>
+                        
+                        <div className="flex flex-col">
+                          <p className="text-black" style={{ ...type.sm, lineHeight: '15px' }}>
+                            Significant. Viking's Phase 3 readout in H2 2025 will de-risk the asset and attract competing bids. Based on Roche/Carmot ($2.7B) and AZ/Eccogene comps, valuation could increase 3-4x post-data. Early engagement gives negotiating leverage.
+                          </p>
+                          <span className="text-black/50 mt-1.5" style={type.xs}>2:43 PM</span>
+                        </div>
+                      </div>
+                      
+                      {/* Chat Input */}
+                      <div className="p-3 border-t border-black/10">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={chatInput}
+                            onChange={(e) => setChatInput(e.target.value)}
+                            placeholder="Ask a question..."
+                            className="flex-1 h-9 px-3 border border-black/20 rounded-md text-black placeholder-black/40 focus:outline-none focus:border-violet-400"
+                            style={type.sm}
+                          />
+                          <Tooltip label="Send">
+                            <button 
+                              className="h-9 w-9 flex items-center justify-center text-white rounded-md hover:opacity-90"
+                              style={accentBg}
+                            >
+                              <Send size={16} />
+                            </button>
+                          </Tooltip>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<FermaAgents />);
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Agent</title>
+  <style>
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes scaleIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; background: #0a0a0b; color: #e4e4e7; font-size: 13px; }
+    .app { opacity: 0; transition: opacity 0.5s ease; }
+    .app.mounted { opacity: 1; }
+    .main { max-width: 620px; margin: 0 auto; padding: 32px 24px 140px; }
+    .page-title { font-size: 22px; font-weight: 600; color: #fafafa; letter-spacing: -0.02em; margin-bottom: 36px; }
+    .done { display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; margin-bottom: 10px; animation: fadeIn 0.3s ease; transition: all 0.2s ease; }
+    .done:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
+    .done-dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 10px rgba(34,197,94,0.4); flex-shrink: 0; }
+    .done-label { font-size: 11px; font-weight: 500; color: #71717a; width: 80px; flex-shrink: 0; text-transform: uppercase; letter-spacing: 0.05em; }
+    .done-value { font-size: 13px; font-weight: 500; color: #e4e4e7; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .done-edit { height: 30px; padding: 0 12px; font-size: 12px; font-weight: 500; color: #71717a; background: transparent; border: none; border-radius: 6px; cursor: pointer; transition: all 0.15s ease; }
+    .done-edit:hover { color: #e4e4e7; background: rgba(255,255,255,0.06); }
+    .card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 20px; margin-bottom: 10px; animation: fadeInUp 0.35s ease; }
+    .card-head { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+    .card-num { width: 28px; height: 28px; background: rgba(255,255,255,0.1); color: #fafafa; border-radius: 8px; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+    .card-title { font-size: 15px; font-weight: 600; color: #fafafa; letter-spacing: -0.01em; }
+    .card-badge { margin-left: auto; font-size: 10px; font-weight: 500; color: #71717a; background: rgba(255,255,255,0.06); padding: 5px 10px; border-radius: 5px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .card-desc { font-size: 13px; color: #a1a1aa; line-height: 1.6; margin-bottom: 18px; }
+    .future { display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: transparent; border: 1px solid rgba(255,255,255,0.04); border-radius: 12px; margin-bottom: 10px; opacity: 0.4; transition: opacity 0.2s ease; }
+    .future:hover { opacity: 0.5; }
+    .future-num { width: 28px; height: 28px; background: rgba(255,255,255,0.04); color: #52525b; border-radius: 8px; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+    .future-title { font-size: 13px; font-weight: 500; color: #52525b; }
+    .future-badge { margin-left: auto; font-size: 10px; font-weight: 500; color: #3f3f46; text-transform: uppercase; letter-spacing: 0.04em; }
+    .btn-row { display: flex; gap: 10px; }
+    .select-btn { flex: 1; height: 44px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; font-size: 13px; font-weight: 500; color: #e4e4e7; cursor: pointer; transition: all 0.2s ease; }
+    .select-btn:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); transform: translateY(-1px); }
+    .wf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .wf-btn { height: auto; min-height: 44px; padding: 12px 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; font-size: 12.5px; font-weight: 500; color: #e4e4e7; cursor: pointer; text-align: left; line-height: 1.4; transition: all 0.2s ease; }
+    .wf-btn:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); transform: translateY(-1px); }
+    .scope-box { border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; overflow: hidden; transition: border-color 0.2s ease; }
+    .scope-box:focus-within { border-color: rgba(255,255,255,0.2); }
+    .scope-input { width: 100%; padding: 12px 14px; border: none; background: rgba(255,255,255,0.02); font-size: 13px; font-family: inherit; line-height: 1.5; resize: none; min-height: 80px; color: #d4d4d8; }
+    .scope-input:focus { outline: none; }
+    .scope-input::placeholder { color: #52525b; }
+    .ent-section { border-top: 1px solid rgba(255,255,255,0.06); padding: 16px; background: rgba(255,255,255,0.015); }
+    .ent-header { margin-bottom: 14px; }
+    .ent-label { font-size: 12px; font-weight: 500; color: #d4d4d8; margin-bottom: 4px; }
+    .ent-optional { font-size: 11px; font-weight: 400; color: #71717a; }
+    .ent-help { font-size: 11px; color: #71717a; line-height: 1.4; margin-top: 2px; }
+    .ent-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .ent-tag { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; font-size: 11px; font-weight: 500; color: #d4d4d8; animation: scaleIn 0.2s ease; }
+    .ent-tag button { background: none; border: none; cursor: pointer; color: #52525b; font-size: 12px; line-height: 1; padding: 0; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border-radius: 3px; transition: all 0.15s ease; }
+    .ent-tag button:hover { background: rgba(239,68,68,0.1); color: #ef4444; }
+    .ent-actions { display: flex; gap: 10px; }
+    .ent-upload-btn, .ent-download-btn { flex: 1; height: 36px; padding: 0 12px; border: 1px dashed rgba(255,255,255,0.15); border-radius: 8px; font-size: 12px; font-weight: 500; background: rgba(255,255,255,0.02); color: #a1a1aa; cursor: pointer; transition: all 0.15s ease; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .ent-upload-btn:hover, .ent-download-btn:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.25); color: #d4d4d8; }
+    .enrich-group { margin-bottom: 22px; }
+    .enrich-group:last-child { margin-bottom: 0; }
+    .enrich-label { font-size: 10px; font-weight: 600; color: #71717a; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+    .pills { display: flex; flex-wrap: wrap; gap: 8px; }
+    .pill { height: 34px; padding: 0 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; font-size: 12.5px; font-weight: 500; color: #a1a1aa; cursor: pointer; transition: all 0.15s ease; display: flex; align-items: center; gap: 8px; position: relative; }
+    .pill:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.12); color: #e4e4e7; }
+    .pill.on { background: #fafafa; border-color: #fafafa; color: #09090b; }
+    .pill.on:hover { background: #e4e4e7; border-color: #e4e4e7; }
+    .pill.has-note { background: rgba(59,130,246,0.08); border-color: rgba(59,130,246,0.25); color: #93c5fd; }
+    .pill.has-note:hover { background: rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.35); color: #bfdbfe; }
+    .pill.on.has-note { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border-color: #3b82f6; color: #ffffff; }
+    .pill.on.has-note:hover { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); border-color: #2563eb; }
+    .pill .note-badge { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; padding: 3px 6px; border-radius: 4px; background: rgba(59,130,246,0.2); color: #60a5fa; }
+    .pill.on .note-badge { background: rgba(255,255,255,0.2); color: #ffffff; }
+    .pill.custom { border-style: dashed; }
+    .pill.custom.on { border-style: solid; }
+    .pill .edit-icon { display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; background: rgba(0,0,0,0.1); border-radius: 5px; font-size: 10px; margin-left: 2px; transition: all 0.15s ease; }
+    .pill.on:hover .edit-icon { background: rgba(0,0,0,0.2); }
+    .pill .remove-btn { opacity: 0; font-size: 14px; line-height: 1; transition: opacity 0.15s ease; margin-left: 2px; }
+    .pill.custom:hover .remove-btn { opacity: 0.6; }
+    .pill.custom .remove-btn:hover { opacity: 1; color: #ef4444; }
+    .alert-pills .pill { border-radius: 17px; }
+    .add-custom-btn { height: 34px; padding: 0 14px; background: transparent; border: 1px dashed rgba(255,255,255,0.15); border-radius: 8px; font-size: 12px; font-weight: 500; color: #71717a; cursor: pointer; transition: all 0.15s ease; display: flex; align-items: center; gap: 6px; }
+    .add-custom-btn:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.25); color: #a1a1aa; }
+    .alert-pills .add-custom-btn { border-radius: 17px; }
+    .inline-input-wrap { display: flex; gap: 8px; animation: scaleIn 0.2s ease; }
+    .inline-input { height: 34px; padding: 0 12px; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; font-size: 12px; font-family: inherit; background: rgba(255,255,255,0.04); color: #e4e4e7; min-width: 160px; transition: all 0.15s ease; }
+    .inline-input:focus { outline: none; border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.06); }
+    .inline-input::placeholder { color: #52525b; }
+    .inline-btn { height: 34px; padding: 0 12px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; font-size: 11px; font-weight: 500; color: #a1a1aa; cursor: pointer; transition: all 0.15s ease; }
+    .inline-btn:hover { background: rgba(255,255,255,0.12); color: #e4e4e7; }
+    .inline-btn.primary { background: #fafafa; border-color: #fafafa; color: #09090b; }
+    .inline-btn.primary:hover { background: #e4e4e7; }
+    .note-editor { margin-top: 16px; padding: 16px; background: rgba(59,130,246,0.04); border: 1px solid rgba(59,130,246,0.15); border-radius: 10px; animation: scaleIn 0.2s ease; }
+    .note-editor-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .note-editor-title { font-size: 12px; font-weight: 600; color: #93c5fd; }
+    .note-editor-close { background: none; border: none; color: #71717a; cursor: pointer; font-size: 18px; line-height: 1; padding: 4px; transition: color 0.15s ease; }
+    .note-editor-close:hover { color: #e4e4e7; }
+    .note-input { width: 100%; padding: 12px; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; font-size: 12.5px; font-family: inherit; background: rgba(255,255,255,0.02); color: #d4d4d8; resize: none; min-height: 72px; line-height: 1.6; margin-bottom: 12px; }
+    .note-input:focus { outline: none; border-color: rgba(59,130,246,0.3); }
+    .note-input::placeholder { color: #52525b; }
+    .note-actions { display: flex; gap: 8px; justify-content: flex-end; }
+    .btn-row-actions { display: flex; gap: 10px; margin-top: 24px; }
+    .btn { flex: 1; height: 44px; border-radius: 10px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; }
+    .btn-primary { background: #fafafa; color: #09090b; border: none; }
+    .btn-primary:hover { background: #e4e4e7; transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+    .btn-ghost { background: transparent; color: #71717a; border: 1px solid rgba(255,255,255,0.1); }
+    .btn-ghost:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.15); color: #a1a1aa; }
+    .continue-btn { width: 100%; height: 44px; margin-top: 18px; background: #fafafa; color: #09090b; border: none; border-radius: 10px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; }
+    .continue-btn:hover { background: #e4e4e7; transform: translateY(-1px); }
+    .continue-btn:disabled { opacity: 0.2; cursor: not-allowed; transform: none; }
+    .final { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 24px; margin-top: 10px; animation: fadeInUp 0.35s ease; }
+    .final-label { font-size: 10px; font-weight: 600; color: #71717a; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+    .final-input { width: 100%; height: 48px; padding: 0 16px; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; font-size: 15px; font-weight: 500; font-family: inherit; margin-bottom: 16px; background: rgba(255,255,255,0.02); color: #fafafa; transition: all 0.2s ease; }
+    .final-input:focus { outline: none; border-color: rgba(255,255,255,0.25); background: rgba(255,255,255,0.04); }
+    .final-input::placeholder { color: #52525b; }
+    .create-btn { width: 100%; height: 48px; background: #fafafa; color: #09090b; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+    .create-btn:hover { background: #e4e4e7; transform: translateY(-1px); }
+    .create-btn:disabled { opacity: 0.2; cursor: not-allowed; transform: none; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <main class="main">
+      <h1 class="page-title">New Agent</h1>
+      <div id="root"></div>
+    </main>
+  </div>
+
+  <script>
+    (function() {
+      // Configuration data
+      const allWorkflows = [
+        { id: 'market-landscape', name: 'Landscape Research', teams: ['BD', 'CI', 'Medical', 'Other'] },
+        { id: 'catalyst-monitoring', name: 'Catalyst Tracking', teams: ['BD', 'CI', 'Medical', 'Other'] },
+        { id: 'trial-readout', name: 'Trial Readouts', teams: ['BD', 'CI', 'Medical', 'Other'] },
+        { id: 'custom', name: 'Custom', teams: ['BD', 'CI', 'Medical', 'Other'] }
+      ];
+
+      const enrichmentConfig = {
+        science: {
+          label: 'Science',
+          items: [
+            { id: 'mechanism', label: 'Mechanism', teams: ['BD', 'CI', 'Medical', 'Other'], workflows: ['market-landscape', 'trial-readout', 'custom'] },
+            { id: 'efficacy', label: 'Efficacy', teams: ['BD', 'CI', 'Medical', 'Other'], workflows: ['market-landscape', 'trial-readout', 'custom'] },
+            { id: 'safety', label: 'Safety', teams: ['BD', 'CI', 'Medical', 'Other'], workflows: ['market-landscape', 'trial-readout', 'custom'] }
+          ]
+        },
+        development: {
+          label: 'Development',
+          items: [
+            { id: 'stage', label: 'Stage', teams: ['BD', 'CI', 'Medical', 'Other'], workflows: ['market-landscape', 'catalyst-monitoring', 'trial-readout', 'custom'] },
+            { id: 'trials', label: 'Trials', teams: ['BD', 'CI', 'Medical', 'Other'], workflows: ['market-landscape', 'trial-readout', 'custom'] },
+            { id: 'regulatory', label: 'Regulatory', teams: ['BD', 'CI', 'Medical', 'Other'], workflows: ['market-landscape', 'catalyst-monitoring', 'custom'] },
+            { id: 'ip', label: 'IP', teams: ['BD', 'CI', 'Other'], workflows: ['market-landscape', 'catalyst-monitoring', 'custom'] }
+          ]
+        },
+        commercial: {
+          label: 'Commercial',
+          items: [
+            { id: 'market', label: 'Market', teams: ['BD', 'CI', 'Other'], workflows: ['market-landscape', 'custom'] },
+            { id: 'competition', label: 'Competition', teams: ['BD', 'CI', 'Medical', 'Other'], workflows: ['market-landscape', 'catalyst-monitoring', 'custom'] },
+            { id: 'access', label: 'Access', teams: ['BD', 'CI', 'Other'], workflows: ['market-landscape', 'custom'] },
+            { id: 'sales', label: 'Sales', teams: ['BD', 'CI', 'Other'], workflows: ['market-landscape', 'custom'] }
+          ]
+        },
+        corporate: {
+          label: 'Corporate',
+          items: [
+            { id: 'guidance', label: 'Guidance', teams: ['BD', 'CI', 'Other'], workflows: ['market-landscape', 'catalyst-monitoring', 'custom'] },
+            { id: 'deals', label: 'Deals', teams: ['BD', 'CI', 'Other'], workflows: ['market-landscape', 'catalyst-monitoring', 'custom'] }
+          ]
+        }
+      };
+
+      const workflowAlerts = {
+        'market-landscape': { description: 'Competitive field changes.', alerts: ['Pipeline Entry', 'Approval', 'Deal', 'Discontinuation'] },
+        'catalyst-monitoring': { description: 'Binary events.', alerts: ['Data Readout', 'Regulatory Decision', 'Trial Milestone'] },
+        'trial-readout': { description: 'Trial-level events.', alerts: ['Data Readout', 'Protocol Change', 'Enrollment Complete'] },
+        'custom': { description: 'All event types.', alerts: ['Data Readout', 'Regulatory Decision', 'Approval', 'Deal', 'Discontinuation', 'Pipeline Entry', 'Patent Event', 'Label Change', 'Guideline Update'] }
+      };
+
+      const deliverablesConfig = {
+        format: {
+          label: 'Format',
+          items: [
+            { id: 'executive-brief', label: 'Executive Brief', workflows: ['market-landscape', 'catalyst-monitoring', 'trial-readout', 'custom'] },
+            { id: 'deep-dives', label: 'Deep Dives', workflows: ['market-landscape', 'catalyst-monitoring', 'trial-readout', 'custom'] },
+            { id: 'data-tables', label: 'Data Tables', workflows: ['market-landscape', 'catalyst-monitoring', 'trial-readout', 'custom'] }
+          ]
+        },
+        cadence: {
+          label: 'Cadence',
+          items: [
+            { id: 'on-demand', label: 'On-Demand', workflows: ['market-landscape', 'catalyst-monitoring', 'trial-readout', 'custom'] },
+            { id: 'weekly', label: 'Weekly', workflows: ['market-landscape', 'catalyst-monitoring', 'trial-readout', 'custom'] },
+            { id: 'monthly', label: 'Monthly', workflows: ['market-landscape', 'catalyst-monitoring', 'trial-readout', 'custom'] }
+          ]
+        }
+      };
+
+      const deliverablesDefaults = {
+        BD: {
+          'market-landscape': 'Flag assets hitting inflection points. Include deal terms where available.',
+          'catalyst-monitoring': 'Focus on material events. What changes our view on a target?',
+          'trial-readout': 'Focus on differentiation and deal implications.',
+          'custom': 'Structure around decision points. What do we need to know to move forward?'
+        },
+        CI: {
+          'market-landscape': 'Call out anything that changes our competitive position.',
+          'catalyst-monitoring': 'Focus on competitor moves and what they signal.',
+          'trial-readout': 'Benchmark vs. our programs. What does this mean for us competitively?',
+          'custom': 'Actionable intel with clear so-whats. Skip the background—we know the space.'
+        },
+        Medical: {
+          'market-landscape': 'Mechanism-level detail. Clinical differentiation focus.',
+          'catalyst-monitoring': 'Congress and publication highlights. What\'s changing in treatment paradigms?',
+          'trial-readout': 'Scientific interpretation with clinical context. Endpoint deep-dive, safety signals.',
+          'custom': 'Medical and scientific insights. How does this inform our clinical strategy?'
+        },
+        Other: {
+          'market-landscape': 'Key metrics, trends, and outlook.',
+          'catalyst-monitoring': 'Timely updates with impact assessment.',
+          'trial-readout': 'Balanced analysis with context.',
+          'custom': 'Tailored to our specific needs.'
+        }
+      };
+
+      const foundationDefaults = {
+        BD: {
+          'market-landscape': 'Oncology licensing opportunities, Phase 2+, differentiated MOA. Focus on mid-cap biotechs with partnership-ready assets.',
+          'catalyst-monitoring': 'Autoimmune assets with upcoming readouts or PDUFA dates. IL-17, TYK2, JAK pathways.',
+          'trial-readout': 'CDK4/6 inhibitor trials in breast cancer. Need efficacy/safety comparison for diligence.',
+          'custom': 'CNS licensing opportunities—depression, schizophrenia, Alzheimer\'s. Phase 1-3.'
+        },
+        CI: {
+          'market-landscape': 'GLP-1 competitive landscape. Lilly, Novo, Amgen, plus emerging players. Approved products and late-stage pipeline.',
+          'catalyst-monitoring': 'Oncology catalysts from Pfizer, BMS, Merck. Readouts, approvals, label expansions.',
+          'trial-readout': 'PD-1/L1 combos in 1L NSCLC. Keytruda, Opdivo, Tecentriq. How do they compare?',
+          'custom': 'Immunology competitive set. Humira biosimilars, IL-23s, JAKs. Track share shifts and pipeline.'
+        },
+        Medical: {
+          'market-landscape': 'Atopic dermatitis treatments. IL-4/13, JAK, OX40 mechanisms. Approved and Phase 2+.',
+          'catalyst-monitoring': 'Derm congress presentations (AAD, EADV) and guideline updates. Key publications.',
+          'trial-readout': 'JAK inhibitor long-term safety in AD. MACE, VTE, malignancy signals.',
+          'custom': 'Gene therapy and ERT in lysosomal storage disorders. Early and late-stage.'
+        },
+        Other: {
+          'market-landscape': 'Biosimilar landscape in oncology supportive care. G-CSF, ESA products.',
+          'catalyst-monitoring': 'Regulatory actions—inspections, labeling updates, warning letters.',
+          'trial-readout': 'Real-world evidence studies. Effectiveness and adherence outcomes.',
+          'custom': 'Market access developments. ICER reviews, payer decisions, pricing actions.'
+        }
+      };
+
+      const workflowShortNames = {
+        'market-landscape': 'Landscape',
+        'catalyst-monitoring': 'Catalysts',
+        'trial-readout': 'Readout',
+        'custom': 'Custom'
+      };
+
+      const enrichmentHints = {
+        'mechanism': 'e.g., differentiation vs. existing MOAs, target validation, modality advantages',
+        'efficacy': 'e.g., ORR thresholds, durability benchmarks, head-to-head comparisons',
+        'safety': 'e.g., specific AEs to flag, discontinuation rates, class effects',
+        'stage': 'e.g., Phase 2+ only, expected readout windows, go/no-go catalysts',
+        'trials': 'e.g., comparator requirements, endpoint preferences, population specifics',
+        'regulatory': 'e.g., breakthrough/fast track status, filing timelines, CRL history',
+        'ip': 'e.g., LOE dates by region, patent challenges, exclusivity type',
+        'market': 'e.g., TAM by region, peak sales projections 2025-2030, growth drivers',
+        'competition': 'e.g., head-to-head positioning, share of voice, pipeline threats',
+        'access': 'e.g., WAC vs. net, formulary wins/losses, ICER reviews',
+        'sales': 'e.g., quarterly trends, launch curve vs. comps, geographic mix',
+        'guidance': 'e.g., management comments on timelines, priority programs, outlook',
+        'deals': 'e.g., deal terms if disclosed, milestone structure, territory rights'
+      };
+
+      const alertHints = {
+        'Pipeline Entry': 'Phase threshold, mechanisms, geographies',
+        'Approval': 'Geographies, indications',
+        'Deal': 'Deal size, type (license, M&A, collab)',
+        'Discontinuation': 'Phase, reasons if disclosed',
+        'Data Readout': 'Phase 2+, topline vs full',
+        'Regulatory Decision': 'CRL vs approval, AdCom',
+        'Trial Milestone': 'Initiation, enrollment, completion',
+        'Protocol Change': 'Endpoint, population, comparator',
+        'Enrollment Complete': 'Ahead/behind schedule',
+        'Patent Event': 'Expiry, IPR, litigation',
+        'Label Change': 'New indication, restriction, warning',
+        'Guideline Update': 'NCCN, ASCO, society'
+      };
+
+      // State
+      let config = {
+        team: null,
+        workflow: null,
+        foundation: '',
+        entities: { firm: [], drug: [], trial: [] },
+        enrichment: [],
+        customEnrichment: {},
+        alerts: [],
+        customAlerts: [],
+        alertNotes: {},
+        deliverables: [],
+        deliverablesScope: '',
+        agentName: '',
+        foundationApproved: false,
+        enrichmentApproved: false,
+        alertsApproved: false,
+        reportsApproved: false
+      };
+
+      let editingNote = null;
+      let noteInput = '';
+      let addingCustom = null;
+      let customInput = '';
+      let mounted = false;
+
+      // Helper functions
+      function getStep() {
+        if (!config.team) return 1;
+        if (!config.workflow) return 2;
+        if (!config.foundationApproved) return 3;
+        if (!config.enrichmentApproved) return 4;
+        if (!config.alertsApproved) return 5;
+        if (!config.reportsApproved) return 6;
+        return 7;
+      }
+
+      function getWorkflowName() {
+        return allWorkflows.find(w => w.id === config.workflow)?.name || '';
+      }
+
+      function getWorkflowsForTeam(team) {
+        return allWorkflows.filter(wf => wf.teams.includes(team));
+      }
+
+      function getAlertsForWorkflow(workflowId) {
+        return workflowAlerts[workflowId] || { description: '', alerts: [] };
+      }
+
+      function getEnrichmentCategories() {
+        const { team, workflow } = config;
+        if (!team || !workflow) return [];
+        const categories = [];
+        for (const [key, category] of Object.entries(enrichmentConfig)) {
+          const filteredItems = category.items.filter(item => item.teams.includes(team) && item.workflows.includes(workflow));
+          if (filteredItems.length > 0) categories.push({ key, label: category.label, items: filteredItems });
+        }
+        return categories;
+      }
+
+      function getDeliverablesCategories() {
+        if (!config.workflow) return [];
+        return Object.entries(deliverablesConfig).map(([key, category]) => ({
+          key,
+          label: category.label,
+          items: category.items.filter(item => item.workflows.includes(config.workflow))
+        })).filter(cat => cat.items.length > 0);
+      }
+
+      function extractScopeTerms(text) {
+        const therapeuticAreas = ['obesity', 'diabetes', 'metabolic', 'cardiovascular', 'oncology', 'immunology', 'neurology', 'rare disease', 'respiratory', 'inflammation', 'autoimmune', 'NASH', 'NAFLD', 'cardiometabolic', 'CNS', 'hematology', 'dermatology'];
+        const mechanisms = ['GLP-1', 'GIP', 'incretin', 'SGLT2', 'PCSK9', 'CAR-T', 'ADC', 'bispecific', 'gene therapy', 'cell therapy', 'mRNA', 'siRNA', 'antibody', 'small molecule'];
+        const lowerText = text.toLowerCase();
+        for (const area of therapeuticAreas) {
+          if (lowerText.includes(area.toLowerCase())) return area.charAt(0).toUpperCase() + area.slice(1);
+        }
+        for (const mech of mechanisms) {
+          if (lowerText.includes(mech.toLowerCase())) return mech;
+        }
+        return null;
+      }
+
+      function generateAgentName() {
+        const { team, workflow, foundation, entities } = config;
+        if (!team || !workflow) return '';
+        if (entities.firm.length === 1) return `${entities.firm[0]} ${workflowShortNames[workflow]}`;
+        if (entities.drug.length === 1) return `${entities.drug[0]} Tracker`;
+        const scopeTerm = extractScopeTerms(foundation);
+        if (scopeTerm) return `${scopeTerm} ${workflowShortNames[workflow]}`;
+        if (entities.firm.length > 1) return `${entities.firm.length} Companies ${workflowShortNames[workflow]}`;
+        return `${team} ${workflowShortNames[workflow]}`;
+      }
+
+      function isEnrichmentSelected(itemId) {
+        return config.enrichment.some(e => e.id === itemId);
+      }
+
+      function getEnrichmentNote(itemId) {
+        return config.enrichment.find(e => e.id === itemId)?.note || '';
+      }
+
+      function isDeliverableSelected(itemId) {
+        return config.deliverables.some(d => d.id === itemId);
+      }
+
+      function countEnrichmentItems() {
+        return config.enrichment.length;
+      }
+
+      function getEnrichmentHint(itemId) {
+        return enrichmentHints[itemId] || 'Specific requirements or filters';
+      }
+
+      function getAlertHint(alertName) {
+        return alertHints[alertName] || 'Thresholds or conditions';
+      }
+
+      // Action functions
+      function selectTeam(team) {
+        config = {
+          team,
+          workflow: null,
+          foundation: '',
+          entities: { firm: [], drug: [], trial: [] },
+          enrichment: [],
+          customEnrichment: {},
+          alerts: [],
+          customAlerts: [],
+          alertNotes: {},
+          deliverables: [],
+          deliverablesScope: '',
+          agentName: '',
+          foundationApproved: false,
+          enrichmentApproved: false,
+          alertsApproved: false,
+          reportsApproved: false
+        };
+        render();
+      }
+
+      function selectWorkflow(workflowId) {
+        const defaultFoundation = foundationDefaults[config.team]?.[workflowId] || '';
+        config = {
+          ...config,
+          workflow: workflowId,
+          foundation: defaultFoundation,
+          enrichment: [],
+          customEnrichment: {},
+          alerts: [],
+          customAlerts: [],
+          alertNotes: {},
+          deliverables: [],
+          deliverablesScope: '',
+          agentName: '',
+          foundationApproved: false,
+          enrichmentApproved: false,
+          alertsApproved: false,
+          reportsApproved: false
+        };
+        render();
+      }
+
+      function toggleEnrichment(itemId, isCustom = false) {
+        const exists = config.enrichment.some(e => e.id === itemId);
+        if (exists) {
+          config.enrichment = config.enrichment.filter(e => e.id !== itemId);
+        } else {
+          config.enrichment = [...config.enrichment, { id: itemId, isCustom }];
+        }
+        render();
+      }
+
+      function saveEnrichmentNote(itemId) {
+        config.enrichment = config.enrichment.map(e => e.id === itemId ? { ...e, note: noteInput.trim() } : e);
+        editingNote = null;
+        noteInput = '';
+        render();
+      }
+
+      function addCustomEnrichment(categoryKey) {
+        if (!customInput.trim()) return;
+        const customId = `custom-${categoryKey}-${Date.now()}`;
+        config.customEnrichment = {
+          ...config.customEnrichment,
+          [categoryKey]: [...(config.customEnrichment[categoryKey] || []), { id: customId, label: customInput.trim() }]
+        };
+        config.enrichment = [...config.enrichment, { id: customId, isCustom: true }];
+        customInput = '';
+        addingCustom = null;
+        render();
+      }
+
+      function removeCustomEnrichment(categoryKey, customId) {
+        config.customEnrichment = {
+          ...config.customEnrichment,
+          [categoryKey]: (config.customEnrichment[categoryKey] || []).filter(c => c.id !== customId)
+        };
+        config.enrichment = config.enrichment.filter(e => e.id !== customId);
+        render();
+      }
+
+      function toggleAlert(item) {
+        if (config.alerts.includes(item)) {
+          config.alerts = config.alerts.filter(i => i !== item);
+        } else {
+          config.alerts = [...config.alerts, item];
+        }
+        render();
+      }
+
+      function saveAlertNote(alertName) {
+        config.alertNotes = { ...config.alertNotes, [alertName]: noteInput.trim() };
+        editingNote = null;
+        noteInput = '';
+        render();
+      }
+
+      function addCustomAlert() {
+        if (!customInput.trim()) return;
+        const customAlert = { id: `custom-alert-${Date.now()}`, label: customInput.trim() };
+        config.customAlerts = [...config.customAlerts, customAlert];
+        config.alerts = [...config.alerts, customAlert.label];
+        customInput = '';
+        addingCustom = null;
+        render();
+      }
+
+      function removeCustomAlert(alertId, alertLabel) {
+        config.customAlerts = config.customAlerts.filter(a => a.id !== alertId);
+        config.alerts = config.alerts.filter(a => a !== alertLabel);
+        render();
+      }
+
+      function toggleDeliverable(itemId) {
+        const exists = config.deliverables.some(d => d.id === itemId);
+        if (exists) {
+          config.deliverables = config.deliverables.filter(d => d.id !== itemId);
+        } else {
+          config.deliverables = [...config.deliverables, { id: itemId }];
+        }
+        render();
+      }
+
+      function removeEntity(entityName) {
+        config.entities = {
+          firm: config.entities.firm.filter(e => e !== entityName),
+          drug: config.entities.drug.filter(e => e !== entityName),
+          trial: config.entities.trial.filter(e => e !== entityName)
+        };
+        render();
+      }
+
+      function handleCsvUpload(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const text = e.target.result;
+          const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+          const startIndex = lines[0]?.toLowerCase().includes('name') || lines[0]?.toLowerCase().includes('id') ? 1 : 0;
+          const newEntities = lines.slice(startIndex).filter(e => e);
+          const allFirm = [...config.entities.firm, ...newEntities];
+          config.entities = {
+            firm: [...new Set(allFirm)],
+            drug: [...new Set(allFirm)],
+            trial: [...new Set(allFirm)]
+          };
+          render();
+        };
+        reader.readAsText(file);
+      }
+
+      function downloadSampleCsv() {
+        const sampleData = ['Name', 'Novo Nordisk', 'Semaglutide', 'NCT04567890', 'Pfizer', 'Keytruda'].join('\n');
+        const blob = new Blob([sampleData], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'entities-template.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }
+
+      function createAgent() {
+        const enrichmentItems = config.enrichment.map(e => {
+          const allItems = Object.values(enrichmentConfig).flatMap(cat => cat.items);
+          const customItems = Object.values(config.customEnrichment).flat();
+          const item = [...allItems, ...customItems].find(i => i.id === e.id);
+          return {
+            id: e.id,
+            label: item?.label || e.id,
+            ...(e.note && { spec: e.note })
+          };
+        });
+
+        const alertItems = config.alerts.map(alertName => ({
+          label: alertName,
+          ...(config.alertNotes[alertName] && { spec: config.alertNotes[alertName] })
+        }));
+
+        const selectedFormats = config.deliverables
+          .filter(d => ['executive-brief', 'deep-dives', 'data-tables'].includes(d.id))
+          .map(d => d.id);
+        const selectedCadences = config.deliverables
+          .filter(d => ['on-demand', 'weekly', 'monthly'].includes(d.id))
+          .map(d => d.id);
+
+        const agentConfig = {
+          name: config.agentName,
+          team: config.team,
+          workflow: config.workflow,
+          workflowName: getWorkflowName(),
+          scope: {
+            description: config.foundation,
+            entities: {
+              firms: config.entities.firm,
+              drugs: config.entities.drug,
+              trials: config.entities.trial
+            }
+          },
+          enrichment: enrichmentItems,
+          alerts: alertItems,
+          deliverables: {
+            description: config.deliverablesScope,
+            format: selectedFormats,
+            cadence: selectedCadences
+          }
+        };
+
+        const blob = new Blob([JSON.stringify(agentConfig, null, 2)], { type: 'application/json' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${config.agentName.replace(/\s+/g, '-').toLowerCase()}-agent.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }
+
+      // Render function
+      function render() {
+        const currentStep = getStep();
+        const root = document.getElementById('root');
+        
+        if (config.foundationApproved && !config.agentName) {
+          config.agentName = generateAgentName();
+        }
+
+        let html = '';
+
+        // Step 1: Team
+        html += '<div>';
+        if (currentStep > 1) {
+          html += `
+            <div class="done">
+              <span class="done-dot"></span>
+              <span class="done-label">Team</span>
+              <span class="done-value">${config.team}</span>
+              <button class="done-edit" data-action="selectTeam" data-team="null">Change</button>
+            </div>
+          `;
+        } else {
+          html += `
+            <div class="card">
+              <div class="card-head">
+                <span class="card-num">1</span>
+                <span class="card-title">Select Your Team</span>
+              </div>
+              <div class="btn-row">
+                ${['BD', 'CI', 'Medical', 'Other'].map(t => `
+                  <button class="select-btn" data-action="selectTeam" data-team="${t}">${t}</button>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
+        html += '</div>';
+
+        // Step 2: Workflow
+        html += '<div>';
+        if (currentStep > 2) {
+          html += `
+            <div class="done">
+              <span class="done-dot"></span>
+              <span class="done-label">Workflow</span>
+              <span class="done-value">${getWorkflowName()}</span>
+              <button class="done-edit" data-action="clearWorkflow">Change</button>
+            </div>
+          `;
+        } else if (currentStep === 2) {
+          html += `
+            <div class="card">
+              <div class="card-head">
+                <span class="card-num">2</span>
+                <span class="card-title">Choose a Workflow</span>
+              </div>
+              <div class="wf-grid">
+                ${getWorkflowsForTeam(config.team).map(wf => `
+                  <button class="wf-btn" data-action="selectWorkflow" data-workflow="${wf.id}">${wf.name}</button>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        } else {
+          html += `
+            <div class="future">
+              <span class="future-num">2</span>
+              <span class="future-title">Choose a Workflow</span>
+            </div>
+          `;
+        }
+        html += '</div>';
+
+        // Step 3: Scope
+        html += '<div>';
+        if (currentStep > 3) {
+          html += `
+            <div class="done">
+              <span class="done-dot"></span>
+              <span class="done-label">Scope</span>
+              <span class="done-value">Configured</span>
+              <button class="done-edit" data-action="clearFoundation">Change</button>
+            </div>
+          `;
+        } else if (currentStep === 3) {
+          const allEntities = [...new Set([...config.entities.firm, ...config.entities.drug, ...config.entities.trial])];
+          html += `
+            <div class="card">
+              <div class="card-head">
+                <span class="card-num">3</span>
+                <span class="card-title">Define Scope</span>
+              </div>
+              <div class="scope-box">
+                <textarea class="scope-input" data-action="updateFoundation" placeholder="What are you tracking?">${config.foundation}</textarea>
+                <div class="ent-section">
+                  <div class="ent-header">
+                    <div>
+                      <div class="ent-label">Track Specific Entities <span class="ent-optional">(optional)</span></div>
+                      <div class="ent-help">Upload a CSV file with companies, drugs, or trials</div>
+                    </div>
+                  </div>
+                  ${allEntities.length > 0 ? `
+                    <div class="ent-tags">
+                      ${allEntities.map((e, i) => `
+                        <span class="ent-tag">
+                          ${e}
+                          <button data-action="removeEntity" data-entity="${e}">×</button>
+                        </span>
+                      `).join('')}
+                    </div>
+                  ` : ''}
+                  <div class="ent-actions">
+                    <button class="ent-upload-btn" data-action="triggerFileUpload">
+                      <span>📄</span>
+                      <span>Upload CSV</span>
+                    </button>
+                    <button class="ent-download-btn" data-action="downloadSampleCsv">
+                      <span>⬇</span>
+                      <span>Download Template</span>
+                    </button>
+                  </div>
+                  <input type="file" accept=".csv" class="hidden" id="entitiesFileInput" data-action="handleFileUpload">
+                </div>
+              </div>
+              <button class="continue-btn" data-action="approveFoundation">Continue</button>
+            </div>
+          `;
+        } else {
+          html += `
+            <div class="future">
+              <span class="future-num">3</span>
+              <span class="future-title">Define Scope</span>
+            </div>
+          `;
+        }
+        html += '</div>';
+
+        // Step 4: Enrichment
+        html += '<div>';
+        if (currentStep > 4) {
+          html += `
+            <div class="done">
+              <span class="done-dot"></span>
+              <span class="done-label">Enrichment</span>
+              <span class="done-value">${countEnrichmentItems()} Data Points</span>
+              <button class="done-edit" data-action="clearEnrichment">Change</button>
+            </div>
+          `;
+        } else if (currentStep === 4) {
+          const currentEnrichmentCategories = getEnrichmentCategories();
+          html += `
+            <div class="card">
+              <div class="card-head">
+                <span class="card-num">4</span>
+                <span class="card-title">Enrichment</span>
+              </div>
+              ${currentEnrichmentCategories.map(category => {
+                const categoryItems = [...category.items, ...(config.customEnrichment[category.key] || [])];
+                const editingInCategory = editingNote?.type === 'enrichment' && categoryItems.some(i => i.id === editingNote.id);
+                return `
+                  <div class="enrich-group">
+                    <div class="enrich-label">${category.label}</div>
+                    <div class="pills">
+                      ${category.items.map(item => {
+                        const isSelected = isEnrichmentSelected(item.id);
+                        const hasNote = !!getEnrichmentNote(item.id);
+                        return `
+                          <button class="pill ${isSelected ? 'on' : ''} ${hasNote ? 'has-note' : ''}" 
+                                  data-action="toggleEnrichment" data-item-id="${item.id}">
+                            ${item.label}
+                            ${hasNote ? '<span class="note-badge">Spec</span>' : ''}
+                            ${isSelected ? '<span class="edit-icon">✎</span>' : ''}
+                          </button>
+                        `;
+                      }).join('')}
+                      ${(config.customEnrichment[category.key] || []).map(custom => {
+                        const isSelected = isEnrichmentSelected(custom.id);
+                        const hasNote = !!getEnrichmentNote(custom.id);
+                        return `
+                          <button class="pill custom ${isSelected ? 'on' : ''} ${hasNote ? 'has-note' : ''}" 
+                                  data-action="toggleEnrichment" data-item-id="${custom.id}">
+                            ${custom.label}
+                            ${hasNote ? '<span class="note-badge">Spec</span>' : ''}
+                            ${isSelected ? '<span class="edit-icon">✎</span>' : ''}
+                            <span class="remove-btn" data-action="removeCustomEnrichment" data-category="${category.key}" data-id="${custom.id}">×</span>
+                          </button>
+                        `;
+                      }).join('')}
+                      ${addingCustom === category.key ? `
+                        <div class="inline-input-wrap">
+                          <input class="inline-input" placeholder="Custom data point…" 
+                                 data-action="updateCustomInput" value="${customInput}"
+                                 data-keydown-action="handleCustomInputKeydown" data-category="${category.key}">
+                          <button class="inline-btn primary" data-action="addCustomEnrichment" data-category="${category.key}">Add</button>
+                          <button class="inline-btn" data-action="cancelCustom">Cancel</button>
+                        </div>
+                      ` : `
+                        <button class="add-custom-btn" data-action="startCustomEnrichment" data-category="${category.key}">+ Custom</button>
+                      `}
+                    </div>
+                    ${editingInCategory ? (() => {
+                      const editingItem = categoryItems.find(i => i.id === editingNote.id);
+                      return `
+                        <div class="note-editor">
+                          <div class="note-editor-header">
+                            <span class="note-editor-title">Specify: ${editingItem?.label || editingNote.id}</span>
+                            <button class="note-editor-close" data-action="closeNoteEditor">×</button>
+                          </div>
+                          <textarea class="note-input" placeholder="${getEnrichmentHint(editingNote.id)}" 
+                                    data-action="updateNoteInput" data-keydown-action="handleNoteInputKeydown">${noteInput}</textarea>
+                          <div class="note-actions">
+                            <button class="inline-btn" data-action="clearEnrichmentNote" data-item-id="${editingNote.id}">Clear</button>
+                            <button class="inline-btn" data-action="removeEnrichmentItem" data-item-id="${editingNote.id}">Remove</button>
+                            <button class="inline-btn primary" data-action="saveEnrichmentNote" data-item-id="${editingNote.id}">Save</button>
+                          </div>
+                        </div>
+                      `;
+                    })() : ''}
+                  </div>
+                `;
+              }).join('')}
+              <button class="continue-btn" ${config.enrichment.length === 0 ? 'disabled' : ''} data-action="approveEnrichment">Continue</button>
+            </div>
+          `;
+        } else {
+          html += `
+            <div class="future">
+              <span class="future-num">4</span>
+              <span class="future-title">Enrichment</span>
+            </div>
+          `;
+        }
+        html += '</div>';
+
+        // Step 5: Alerts
+        html += '<div>';
+        if (currentStep > 5) {
+          html += `
+            <div class="done">
+              <span class="done-dot"></span>
+              <span class="done-label">Alerts</span>
+              <span class="done-value">${config.alerts.length > 0 ? `${config.alerts.length} Configured` : 'Skipped'}</span>
+              <button class="done-edit" data-action="clearAlerts">Change</button>
+            </div>
+          `;
+        } else if (currentStep === 5) {
+          const currentAlerts = getAlertsForWorkflow(config.workflow);
+          html += `
+            <div class="card">
+              <div class="card-head">
+                <span class="card-num">5</span>
+                <span class="card-title">Alerts</span>
+                <span class="card-badge">Optional</span>
+              </div>
+              ${currentAlerts.description ? `<div class="card-desc">${currentAlerts.description}</div>` : ''}
+              <div class="pills alert-pills">
+                ${currentAlerts.alerts.map(name => {
+                  const isSelected = config.alerts.includes(name);
+                  const hasNote = !!config.alertNotes[name];
+                  return `
+                    <button class="pill ${isSelected ? 'on' : ''} ${hasNote ? 'has-note' : ''}" 
+                            data-action="toggleAlert" data-alert="${name}">
+                      ${name}
+                      ${hasNote ? '<span class="note-badge">Spec</span>' : ''}
+                      ${isSelected ? '<span class="edit-icon">✎</span>' : ''}
+                    </button>
+                  `;
+                }).join('')}
+                ${config.customAlerts.map(alert => {
+                  const isSelected = config.alerts.includes(alert.label);
+                  const hasNote = !!config.alertNotes[alert.label];
+                  return `
+                    <button class="pill custom ${isSelected ? 'on' : ''} ${hasNote ? 'has-note' : ''}" 
+                            data-action="toggleAlert" data-alert="${alert.label}">
+                      ${alert.label}
+                      ${hasNote ? '<span class="note-badge">Spec</span>' : ''}
+                      ${isSelected ? '<span class="edit-icon">✎</span>' : ''}
+                      <span class="remove-btn" data-action="removeCustomAlert" data-alert-id="${alert.id}" data-alert-label="${alert.label}">×</span>
+                    </button>
+                  `;
+                }).join('')}
+                ${addingCustom === 'alerts' ? `
+                  <div class="inline-input-wrap">
+                    <input class="inline-input" placeholder="Custom alert type…" 
+                           data-action="updateCustomInput" value="${customInput}"
+                           data-keydown-action="handleCustomAlertKeydown">
+                    <button class="inline-btn primary" data-action="addCustomAlert">Add</button>
+                    <button class="inline-btn" data-action="cancelCustom">Cancel</button>
+                  </div>
+                ` : `
+                  <button class="add-custom-btn" data-action="startCustomAlert">+ Custom</button>
+                `}
+              </div>
+              ${editingNote?.type === 'alert' ? `
+                <div class="note-editor">
+                  <div class="note-editor-header">
+                    <span class="note-editor-title">Configure: ${editingNote.id}</span>
+                    <button class="note-editor-close" data-action="closeNoteEditor">×</button>
+                  </div>
+                  <textarea class="note-input" placeholder="${getAlertHint(editingNote.id)}" 
+                            data-action="updateNoteInput" data-keydown-action="handleNoteInputKeydown">${noteInput}</textarea>
+                  <div class="note-actions">
+                    <button class="inline-btn" data-action="clearAlertNote" data-alert="${editingNote.id}">Clear</button>
+                    <button class="inline-btn" data-action="removeAlertItem" data-alert="${editingNote.id}">Remove</button>
+                    <button class="inline-btn primary" data-action="saveAlertNote" data-alert="${editingNote.id}">Save</button>
+                  </div>
+                </div>
+              ` : ''}
+              <div class="btn-row-actions">
+                <button class="btn btn-ghost" data-action="skipAlerts">Skip</button>
+                <button class="btn btn-primary" ${config.alerts.length === 0 ? 'disabled' : ''} data-action="approveAlerts">Continue</button>
+              </div>
+            </div>
+          `;
+        } else {
+          html += `
+            <div class="future">
+              <span class="future-num">5</span>
+              <span class="future-title">Alerts</span>
+              <span class="future-badge">Optional</span>
+            </div>
+          `;
+        }
+        html += '</div>';
+
+        // Step 6: Deliverables
+        html += '<div>';
+        if (currentStep > 6) {
+          html += `
+            <div class="done">
+              <span class="done-dot"></span>
+              <span class="done-label">Deliverables</span>
+              <span class="done-value">${config.deliverables.length > 0 ? `${config.deliverables.length} Selected` : 'Skipped'}</span>
+              <button class="done-edit" data-action="clearDeliverables">Change</button>
+            </div>
+          `;
+        } else if (currentStep === 6) {
+          const deliverablesCategories = getDeliverablesCategories();
+          html += `
+            <div class="card">
+              <div class="card-head">
+                <span class="card-num">6</span>
+                <span class="card-title">Deliverables</span>
+                <span class="card-badge">Optional</span>
+              </div>
+              <div class="scope-box" style="margin-bottom: 20px;">
+                <textarea class="scope-input" data-action="updateDeliverablesScope" placeholder="How do you want to receive insights?">${config.deliverablesScope}</textarea>
+              </div>
+              ${deliverablesCategories.map(category => `
+                <div class="enrich-group">
+                  <div class="enrich-label">${category.label}</div>
+                  <div class="pills">
+                    ${category.items.map(item => {
+                      const isSelected = isDeliverableSelected(item.id);
+                      return `
+                        <button class="pill ${isSelected ? 'on' : ''}" 
+                                data-action="toggleDeliverable" data-item-id="${item.id}">
+                          ${item.label}
+                        </button>
+                      `;
+                    }).join('')}
+                  </div>
+                </div>
+              `).join('')}
+              <div class="btn-row-actions">
+                <button class="btn btn-ghost" data-action="approveDeliverables">Skip</button>
+                <button class="btn btn-primary" data-action="approveDeliverables">Continue</button>
+              </div>
+            </div>
+          `;
+        } else {
+          html += `
+            <div class="future">
+              <span class="future-num">6</span>
+              <span class="future-title">Deliverables</span>
+              <span class="future-badge">Optional</span>
+            </div>
+          `;
+        }
+        html += '</div>';
+
+        // Step 7: Final
+        html += '<div>';
+        if (currentStep === 7) {
+          html += `
+            <div class="final">
+              <div class="final-label">Agent Name</div>
+              <input type="text" class="final-input" data-action="updateAgentName" 
+                     value="${config.agentName}" placeholder="Enter agent name…">
+              <button class="create-btn" ${!config.agentName.trim() ? 'disabled' : ''} data-action="createAgent">
+                Create Agent
+              </button>
+            </div>
+          `;
+        }
+        html += '</div>';
+
+        root.innerHTML = html;
+        attachEventListeners();
+      }
+
+      function attachEventListeners() {
+        document.querySelectorAll('[data-action]').forEach(el => {
+          const action = el.getAttribute('data-action');
+          
+          if (action === 'selectTeam') {
+            el.addEventListener('click', () => selectTeam(el.getAttribute('data-team') === 'null' ? null : el.getAttribute('data-team')));
+          } else if (action === 'clearWorkflow') {
+            el.addEventListener('click', () => {
+              config.workflow = null;
+              config.foundationApproved = false;
+              config.enrichmentApproved = false;
+              config.alertsApproved = false;
+              config.reportsApproved = false;
+              render();
+            });
+          } else if (action === 'selectWorkflow') {
+            el.addEventListener('click', () => selectWorkflow(el.getAttribute('data-workflow')));
+          } else if (action === 'clearFoundation') {
+            el.addEventListener('click', () => {
+              config.foundationApproved = false;
+              config.enrichmentApproved = false;
+              config.alertsApproved = false;
+              config.reportsApproved = false;
+              config.agentName = '';
+              render();
+            });
+          } else if (action === 'updateFoundation') {
+            el.addEventListener('input', (e) => {
+              config.foundation = e.target.value;
+            });
+          } else if (action === 'approveFoundation') {
+            el.addEventListener('click', () => {
+              config.foundationApproved = true;
+              render();
+            });
+          } else if (action === 'triggerFileUpload') {
+            el.addEventListener('click', () => {
+              document.getElementById('entitiesFileInput')?.click();
+            });
+          } else if (action === 'handleFileUpload') {
+            el.addEventListener('change', (e) => handleCsvUpload(e.target.files?.[0]));
+          } else if (action === 'downloadSampleCsv') {
+            el.addEventListener('click', downloadSampleCsv);
+          } else if (action === 'removeEntity') {
+            el.addEventListener('click', () => removeEntity(el.getAttribute('data-entity')));
+          } else if (action === 'clearEnrichment') {
+            el.addEventListener('click', () => {
+              config.enrichmentApproved = false;
+              config.alertsApproved = false;
+              config.reportsApproved = false;
+              render();
+            });
+          } else if (action === 'toggleEnrichment') {
+            el.addEventListener('click', () => {
+              const itemId = el.getAttribute('data-item-id');
+              const isSelected = isEnrichmentSelected(itemId);
+              if (isSelected && editingNote?.id !== itemId) {
+                editingNote = { type: 'enrichment', id: itemId };
+                noteInput = getEnrichmentNote(itemId);
+                render();
+              } else if (!isSelected) {
+                toggleEnrichment(itemId);
+              }
+            });
+          } else if (action === 'startCustomEnrichment') {
+            el.addEventListener('click', () => {
+              addingCustom = el.getAttribute('data-category');
+              customInput = '';
+              render();
+            });
+          } else if (action === 'updateCustomInput') {
+            el.addEventListener('input', (e) => {
+              customInput = e.target.value;
+            });
+            const keydownAction = el.getAttribute('data-keydown-action');
+            if (keydownAction === 'handleCustomInputKeydown') {
+              el.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                  addCustomEnrichment(el.getAttribute('data-category'));
+                } else if (e.key === 'Escape') {
+                  addingCustom = null;
+                  customInput = '';
+                  render();
+                }
+              });
+            } else if (keydownAction === 'handleCustomAlertKeydown') {
+              el.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                  addCustomAlert();
+                } else if (e.key === 'Escape') {
+                  addingCustom = null;
+                  customInput = '';
+                  render();
+                }
+              });
+            }
+          } else if (action === 'addCustomEnrichment') {
+            el.addEventListener('click', () => addCustomEnrichment(el.getAttribute('data-category')));
+          } else if (action === 'cancelCustom') {
+            el.addEventListener('click', () => {
+              addingCustom = null;
+              customInput = '';
+              render();
+            });
+          } else if (action === 'removeCustomEnrichment') {
+            el.addEventListener('click', (e) => {
+              e.stopPropagation();
+              removeCustomEnrichment(el.getAttribute('data-category'), el.getAttribute('data-id'));
+            });
+          } else if (action === 'updateNoteInput') {
+            el.addEventListener('input', (e) => {
+              noteInput = e.target.value;
+            });
+            const keydownAction = el.getAttribute('data-keydown-action');
+            if (keydownAction === 'handleNoteInputKeydown') {
+              el.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                  editingNote = null;
+                  noteInput = '';
+                  render();
+                }
+              });
+            }
+          } else if (action === 'closeNoteEditor') {
+            el.addEventListener('click', () => {
+              editingNote = null;
+              noteInput = '';
+              render();
+            });
+          } else if (action === 'clearEnrichmentNote') {
+            el.addEventListener('click', () => {
+              const itemId = el.getAttribute('data-item-id');
+              config.enrichment = config.enrichment.map(e => e.id === itemId ? { ...e, note: undefined } : e);
+              editingNote = null;
+              noteInput = '';
+              render();
+            });
+          } else if (action === 'removeEnrichmentItem') {
+            el.addEventListener('click', () => {
+              const itemId = el.getAttribute('data-item-id');
+              toggleEnrichment(itemId);
+              editingNote = null;
+              noteInput = '';
+              render();
+            });
+          } else if (action === 'saveEnrichmentNote') {
+            el.addEventListener('click', () => saveEnrichmentNote(el.getAttribute('data-item-id')));
+          } else if (action === 'approveEnrichment') {
+            el.addEventListener('click', () => {
+              config.enrichmentApproved = true;
+              render();
+            });
+          } else if (action === 'clearAlerts') {
+            el.addEventListener('click', () => {
+              config.alertsApproved = false;
+              render();
+            });
+          } else if (action === 'toggleAlert') {
+            el.addEventListener('click', () => {
+              const alertName = el.getAttribute('data-alert');
+              const isSelected = config.alerts.includes(alertName);
+              if (isSelected && editingNote?.id !== alertName) {
+                editingNote = { type: 'alert', id: alertName };
+                noteInput = config.alertNotes[alertName] || '';
+                render();
+              } else if (!isSelected) {
+                toggleAlert(alertName);
+              }
+            });
+          } else if (action === 'startCustomAlert') {
+            el.addEventListener('click', () => {
+              addingCustom = 'alerts';
+              customInput = '';
+              render();
+            });
+          } else if (action === 'addCustomAlert') {
+            el.addEventListener('click', addCustomAlert);
+          } else if (action === 'removeCustomAlert') {
+            el.addEventListener('click', (e) => {
+              e.stopPropagation();
+              removeCustomAlert(el.getAttribute('data-alert-id'), el.getAttribute('data-alert-label'));
+            });
+          } else if (action === 'clearAlertNote') {
+            el.addEventListener('click', () => {
+              const alertName = el.getAttribute('data-alert');
+              const newNotes = { ...config.alertNotes };
+              delete newNotes[alertName];
+              config.alertNotes = newNotes;
+              editingNote = null;
+              noteInput = '';
+              render();
+            });
+          } else if (action === 'removeAlertItem') {
+            el.addEventListener('click', () => {
+              const alertName = el.getAttribute('data-alert');
+              toggleAlert(alertName);
+              editingNote = null;
+              noteInput = '';
+              render();
+            });
+          } else if (action === 'saveAlertNote') {
+            el.addEventListener('click', () => saveAlertNote(el.getAttribute('data-alert')));
+          } else if (action === 'skipAlerts') {
+            el.addEventListener('click', () => {
+              config.alerts = [];
+              config.alertNotes = {};
+              config.alertsApproved = true;
+              config.deliverablesScope = deliverablesDefaults[config.team]?.[config.workflow] || '';
+              render();
+            });
+          } else if (action === 'approveAlerts') {
+            el.addEventListener('click', () => {
+              config.alertsApproved = true;
+              config.deliverablesScope = deliverablesDefaults[config.team]?.[config.workflow] || '';
+              render();
+            });
+          } else if (action === 'clearDeliverables') {
+            el.addEventListener('click', () => {
+              config.reportsApproved = false;
+              render();
+            });
+          } else if (action === 'toggleDeliverable') {
+            el.addEventListener('click', () => toggleDeliverable(el.getAttribute('data-item-id')));
+          } else if (action === 'updateDeliverablesScope') {
+            el.addEventListener('input', (e) => {
+              config.deliverablesScope = e.target.value;
+            });
+          } else if (action === 'approveDeliverables') {
+            el.addEventListener('click', () => {
+              config.reportsApproved = true;
+              render();
+            });
+          } else if (action === 'updateAgentName') {
+            el.addEventListener('input', (e) => {
+              config.agentName = e.target.value;
+              const createBtn = document.querySelector('[data-action="createAgent"]');
+              if (createBtn) {
+                createBtn.disabled = !e.target.value.trim();
+              }
+            });
+          } else if (action === 'createAgent') {
+            el.addEventListener('click', createAgent);
+          }
+        });
+      }
+
+      // Initialize
+      document.getElementById('app').classList.add('mounted');
+      mounted = true;
+      render();
+    })();
+  </script>
+</body>
+</html>
