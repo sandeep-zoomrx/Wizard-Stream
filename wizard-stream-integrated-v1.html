@@ -1,0 +1,1827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ferma Agents - New Agent</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    body { margin: 0; padding: 0; overflow: hidden; }
+
+    /* Wizard styles */
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes scaleIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+    @keyframes slideInRight { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes slideOutLeft { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(-100%); } }
+
+    .wizard-card { animation: fadeInUp 0.35s ease; }
+    .pill-animate { animation: scaleIn 0.2s ease; }
+    .slide-in-right { animation: slideInRight 0.4s ease-out forwards; }
+    .slide-out-left { animation: slideOutLeft 0.4s ease-out forwards; }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+
+    .light-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); }
+    .light-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.25); }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useCallback } = React;
+
+    // ============================================
+    // ICONS
+    // ============================================
+    const Check = ({ size = 16, className = "", strokeWidth = 2 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+    );
+
+    const Pencil = ({ size = 16, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+      </svg>
+    );
+
+    const Play = ({ size = 16, className = "", fill = "none" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <polygon points="5 3 19 12 5 21 5 3" />
+      </svg>
+    );
+
+    const Download = ({ size = 16, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <polyline points="7 10 12 15 17 10" />
+        <line x1="12" y1="15" x2="12" y2="3" />
+      </svg>
+    );
+
+    const Send = ({ size = 16, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <line x1="22" y1="2" x2="11" y2="13" />
+        <polygon points="22 2 15 22 11 13 2 9 22 2" />
+      </svg>
+    );
+
+    const ChevronRight = ({ size = 16, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <polyline points="9 18 15 12 9 6" />
+      </svg>
+    );
+
+    const CollapsePanelLeftIcon = ({ size = 16, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <rect x="3" y="3" width="18" height="18" rx="4" />
+        <line x1="9" y1="3" x2="9" y2="21" />
+      </svg>
+    );
+
+    const CollapsePanelRightIcon = ({ size = 16, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <rect x="3" y="3" width="18" height="18" rx="4" />
+        <line x1="15" y1="3" x2="15" y2="21" />
+      </svg>
+    );
+
+    // ============================================
+    // DESIGN TOKENS
+    // ============================================
+    const ACCENT = '#7B61FF';
+    const accentBg = { backgroundColor: ACCENT };
+
+    const darkBgPattern = {
+      backgroundColor: '#0a0a0b',
+      backgroundImage: 'radial-gradient(rgba(123, 97, 255, 0.08) 1px, transparent 1px)',
+      backgroundSize: '16px 16px',
+    };
+
+    const type = {
+      xs: { fontSize: '10px', lineHeight: '13px' },
+      sm: { fontSize: '11px', lineHeight: '15px' },
+      base: { fontSize: '11px', lineHeight: '15px' },
+      md: { fontSize: '12px', lineHeight: '15px' },
+      lg: { fontSize: '13px', lineHeight: '17px' },
+      xl: { fontSize: '13px', lineHeight: '17px' },
+      '2xl': { fontSize: '13px', lineHeight: '17px' },
+    };
+
+    // ============================================
+    // CONFIGURATION DATA
+    // ============================================
+    const allWorkflows = [
+      { id: 'market-landscape', name: 'Landscape Research', teams: ['BD', 'CI', 'Medical', 'Other'] },
+      { id: 'catalyst-monitoring', name: 'Catalyst Tracking', teams: ['BD', 'CI', 'Medical', 'Other'] },
+      { id: 'trial-readout', name: 'Trial Readouts', teams: ['BD', 'CI', 'Medical', 'Other'] },
+      { id: 'custom', name: 'Custom', teams: ['BD', 'CI', 'Medical', 'Other'] }
+    ];
+
+    const enrichmentConfig = {
+      main: {
+        label: 'Main Categories',
+        items: [
+          { id: 'key-insights', label: 'Key Insights', teams: ['BD', 'CI', 'Medical', 'Other'], workflows: ['market-landscape', 'catalyst-monitoring', 'trial-readout', 'custom'] },
+          { id: 'readouts', label: 'Readouts', teams: ['BD', 'CI', 'Medical', 'Other'], workflows: ['market-landscape', 'trial-readout', 'custom'] },
+          { id: 'deals', label: 'Deals', teams: ['BD', 'CI', 'Other'], workflows: ['market-landscape', 'catalyst-monitoring', 'custom'] },
+          { id: 'sales', label: 'Sales', teams: ['BD', 'CI', 'Other'], workflows: ['market-landscape', 'custom'] }
+        ]
+      }
+    };
+
+    const workflowAlerts = {
+      'market-landscape': { description: 'Competitive field changes.', alerts: ['Pipeline Entry', 'Approval', 'Deal', 'Discontinuation'] },
+      'catalyst-monitoring': { description: 'Binary events.', alerts: ['Data Readout', 'Regulatory Decision', 'Trial Milestone'] },
+      'trial-readout': { description: 'Trial-level events.', alerts: ['Data Readout', 'Protocol Change', 'Enrollment Complete'] },
+      'custom': { description: 'All event types.', alerts: ['Data Readout', 'Regulatory Decision', 'Approval', 'Deal', 'Discontinuation', 'Pipeline Entry', 'Patent Event', 'Label Change', 'Guideline Update'] }
+    };
+
+    const deliverablesConfig = {
+      format: {
+        label: 'Format',
+        items: [
+          { id: 'executive-brief', label: 'Executive Brief', workflows: ['market-landscape', 'catalyst-monitoring', 'trial-readout', 'custom'] },
+          { id: 'deep-dives', label: 'Deep Dives', workflows: ['market-landscape', 'catalyst-monitoring', 'trial-readout', 'custom'] },
+          { id: 'data-tables', label: 'Data Tables', workflows: ['market-landscape', 'catalyst-monitoring', 'trial-readout', 'custom'] }
+        ]
+      },
+      cadence: {
+        label: 'Cadence',
+        items: [
+          { id: 'on-demand', label: 'On-Demand', workflows: ['market-landscape', 'catalyst-monitoring', 'trial-readout', 'custom'] },
+          { id: 'weekly', label: 'Weekly', workflows: ['market-landscape', 'catalyst-monitoring', 'trial-readout', 'custom'] },
+          { id: 'monthly', label: 'Monthly', workflows: ['market-landscape', 'catalyst-monitoring', 'trial-readout', 'custom'] }
+        ]
+      }
+    };
+
+    const foundationDefaults = {
+      BD: {
+        'market-landscape': 'Oncology licensing opportunities, Phase 2+, differentiated MOA. Focus on mid-cap biotechs with partnership-ready assets.',
+        'catalyst-monitoring': 'Autoimmune assets with upcoming readouts or PDUFA dates. IL-17, TYK2, JAK pathways.',
+        'trial-readout': 'CDK4/6 inhibitor trials in breast cancer. Need efficacy/safety comparison for diligence.',
+        'custom': 'CNS licensing opportunities—depression, schizophrenia, Alzheimer\'s. Phase 1-3.'
+      },
+      CI: {
+        'market-landscape': 'GLP-1 competitive landscape. Lilly, Novo, Amgen, plus emerging players. Approved products and late-stage pipeline.',
+        'catalyst-monitoring': 'Oncology catalysts from Pfizer, BMS, Merck. Readouts, approvals, label expansions.',
+        'trial-readout': 'PD-1/L1 combos in 1L NSCLC. Keytruda, Opdivo, Tecentriq. How do they compare?',
+        'custom': 'Immunology competitive set. Humira biosimilars, IL-23s, JAKs. Track share shifts and pipeline.'
+      },
+      Medical: {
+        'market-landscape': 'Atopic dermatitis treatments. IL-4/13, JAK, OX40 mechanisms. Approved and Phase 2+.',
+        'catalyst-monitoring': 'Derm congress presentations (AAD, EADV) and guideline updates. Key publications.',
+        'trial-readout': 'JAK inhibitor long-term safety in AD. MACE, VTE, malignancy signals.',
+        'custom': 'Gene therapy and ERT in lysosomal storage disorders. Early and late-stage.'
+      },
+      Other: {
+        'market-landscape': 'Biosimilar landscape in oncology supportive care. G-CSF, ESA products.',
+        'catalyst-monitoring': 'Regulatory actions—inspections, labeling updates, warning letters.',
+        'trial-readout': 'Real-world evidence studies. Effectiveness and adherence outcomes.',
+        'custom': 'Market access developments. ICER reviews, payer decisions, pricing actions.'
+      }
+    };
+
+    const workflowShortNames = {
+      'market-landscape': 'Landscape',
+      'catalyst-monitoring': 'Catalysts',
+      'trial-readout': 'Readout',
+      'custom': 'Custom'
+    };
+
+    // Scope blocks configuration
+    const scopeBlocksConfig = [
+      { id: 'drug', label: 'Drug', placeholder: 'e.g., Semaglutide, Tirzepatide, Retatrutide' },
+      { id: 'company', label: 'Company', placeholder: 'e.g., Novo Nordisk, Eli Lilly, Pfizer' },
+      { id: 'target', label: 'Target', placeholder: 'e.g., GLP-1, GIP, GIPR, GCG' },
+      { id: 'indication', label: 'Indication', placeholder: 'e.g., Type 2 Diabetes, Obesity, NASH' },
+      { id: 'devPhase', label: 'Development Phase', placeholder: 'e.g., Phase 2, Phase 3, Approved' },
+      { id: 'disease', label: 'Disease', placeholder: 'e.g., Obesity, Diabetes, Cardiovascular' },
+      { id: 'therapyArea', label: 'Therapy Area', placeholder: 'e.g., Metabolic, Oncology, CNS' },
+      { id: 'geography', label: 'Geography', placeholder: 'e.g., US, EU, Japan, Global' }
+    ];
+
+    // ============================================
+    // TOOLTIP COMPONENT
+    // ============================================
+    const Tooltip = ({ children, label }) => (
+      <div className="relative group">
+        {children}
+        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-black text-white text-xs font-medium rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+          {label}
+        </div>
+      </div>
+    );
+
+    // ============================================
+    // WIZARD COMPONENT
+    // ============================================
+    function Wizard({ config, setConfig, onComplete, minimized }) {
+      const [editingNote, setEditingNote] = useState(null);
+      const [noteInput, setNoteInput] = useState('');
+      const [addingCustom, setAddingCustom] = useState(null);
+      const [customInput, setCustomInput] = useState('');
+      const [activeScopeBlock, setActiveScopeBlock] = useState(null);
+      const [scopeInput, setScopeInput] = useState('');
+
+      const getStep = () => {
+        if (!config.team) return 1;
+        if (!config.workflow) return 2;
+        if (!config.foundationApproved) return 3;
+        if (!config.enrichmentApproved) return 4;
+        if (!config.alertsApproved) return 5;
+        if (!config.reportsApproved) return 6;
+        return 7;
+      };
+
+      const currentStep = getStep();
+
+      const getWorkflowName = () => allWorkflows.find(w => w.id === config.workflow)?.name || '';
+      const getWorkflowsForTeam = (team) => allWorkflows.filter(wf => wf.teams.includes(team));
+      const getAlertsForWorkflow = (workflowId) => workflowAlerts[workflowId] || { description: '', alerts: [] };
+
+      const getEnrichmentCategories = () => {
+        const { team, workflow } = config;
+        if (!team || !workflow) return [];
+        const categories = [];
+        for (const [key, category] of Object.entries(enrichmentConfig)) {
+          const filteredItems = category.items.filter(item => item.teams.includes(team) && item.workflows.includes(workflow));
+          if (filteredItems.length > 0) categories.push({ key, label: category.label, items: filteredItems });
+        }
+        return categories;
+      };
+
+      const getDeliverablesCategories = () => {
+        if (!config.workflow) return [];
+        return Object.entries(deliverablesConfig).map(([key, category]) => ({
+          key,
+          label: category.label,
+          items: category.items.filter(item => item.workflows.includes(config.workflow))
+        })).filter(cat => cat.items.length > 0);
+      };
+
+      const isEnrichmentSelected = (itemId) => config.enrichment.some(e => e.id === itemId);
+      const getEnrichmentNote = (itemId) => config.enrichment.find(e => e.id === itemId)?.note || '';
+      const isDeliverableSelected = (itemId) => config.deliverables.some(d => d.id === itemId);
+
+      const selectTeam = (team) => {
+        setConfig({
+          team,
+          workflow: null,
+          foundation: '',
+          scope: {},
+          entities: { firm: [], drug: [], trial: [] },
+          enrichment: [],
+          customEnrichment: {},
+          alerts: [],
+          customAlerts: [],
+          alertNotes: {},
+          deliverables: [],
+          deliverablesScope: '',
+          agentName: '',
+          foundationApproved: false,
+          enrichmentApproved: false,
+          alertsApproved: false,
+          reportsApproved: false
+        });
+        setActiveScopeBlock(null);
+        setScopeInput('');
+      };
+
+      const selectWorkflow = (workflowId) => {
+        setConfig(prev => ({
+          ...prev,
+          workflow: workflowId,
+          foundation: '',
+          scope: {},
+          enrichment: [],
+          customEnrichment: {},
+          alerts: [],
+          customAlerts: [],
+          alertNotes: {},
+          deliverables: [],
+          deliverablesScope: '',
+          agentName: '',
+          foundationApproved: false,
+          enrichmentApproved: false,
+          alertsApproved: false,
+          reportsApproved: false
+        }));
+        setActiveScopeBlock(null);
+        setScopeInput('');
+      };
+
+      // Scope block handlers
+      const isScopeBlockSelected = (blockId) => config.scope[blockId]?.selected || false;
+      const getScopeBlockValues = (blockId) => config.scope[blockId]?.values || [];
+
+      const toggleScopeBlock = (blockId) => {
+        const isSelected = isScopeBlockSelected(blockId);
+        if (isSelected) {
+          // If already selected, just open/toggle the input panel (don't deselect)
+          if (activeScopeBlock === blockId) {
+            // Close the panel if clicking the same block
+            setActiveScopeBlock(null);
+            setScopeInput('');
+          } else {
+            // Open the panel for this block
+            setActiveScopeBlock(blockId);
+            setScopeInput('');
+          }
+        } else {
+          // Select block and open input
+          setConfig(prev => ({
+            ...prev,
+            scope: { ...prev.scope, [blockId]: { selected: true, values: [] } }
+          }));
+          setActiveScopeBlock(blockId);
+          setScopeInput('');
+        }
+      };
+
+      const deselectScopeBlock = (blockId) => {
+        setConfig(prev => {
+          const newScope = { ...prev.scope };
+          delete newScope[blockId];
+          return { ...prev, scope: newScope };
+        });
+        if (activeScopeBlock === blockId) {
+          setActiveScopeBlock(null);
+          setScopeInput('');
+        }
+      };
+
+      const addScopeValue = (blockId) => {
+        const trimmed = scopeInput.trim();
+        if (!trimmed) return;
+        const values = trimmed.split(',').map(v => v.trim()).filter(v => v);
+        setConfig(prev => ({
+          ...prev,
+          scope: {
+            ...prev.scope,
+            [blockId]: {
+              selected: true,
+              values: [...new Set([...(prev.scope[blockId]?.values || []), ...values])]
+            }
+          }
+        }));
+        setScopeInput('');
+      };
+
+      const removeScopeValue = (blockId, value) => {
+        setConfig(prev => ({
+          ...prev,
+          scope: {
+            ...prev.scope,
+            [blockId]: {
+              ...prev.scope[blockId],
+              values: (prev.scope[blockId]?.values || []).filter(v => v !== value)
+            }
+          }
+        }));
+      };
+
+      const handleScopeCsvUpload = (file) => {
+        if (!file || !activeScopeBlock) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const text = e.target.result;
+          const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+          const startIndex = lines[0]?.toLowerCase().includes('name') || lines[0]?.toLowerCase().includes('id') ? 1 : 0;
+          const newValues = lines.slice(startIndex).filter(v => v);
+          setConfig(prev => ({
+            ...prev,
+            scope: {
+              ...prev.scope,
+              [activeScopeBlock]: {
+                selected: true,
+                values: [...new Set([...(prev.scope[activeScopeBlock]?.values || []), ...newValues])]
+              }
+            }
+          }));
+        };
+        reader.readAsText(file);
+      };
+
+      const downloadScopeCsvTemplate = () => {
+        const block = scopeBlocksConfig.find(b => b.id === activeScopeBlock);
+        const sampleData = ['Name', block?.placeholder?.replace('e.g., ', '').split(', ')[0] || 'Item 1', 'Item 2', 'Item 3'].join('\n');
+        const blob = new Blob([sampleData], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${activeScopeBlock}-template.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      };
+
+      const getScopeCount = () => {
+        return Object.values(config.scope).reduce((acc, block) => acc + (block.values?.length || 0), 0);
+      };
+
+      const getScopeSummary = () => {
+        const selected = Object.entries(config.scope).filter(([_, v]) => v.selected && v.values?.length > 0);
+        if (selected.length === 0) return 'No scope defined';
+        return selected.map(([id, data]) => {
+          const block = scopeBlocksConfig.find(b => b.id === id);
+          return `${data.values.length} ${block?.label || id}`;
+        }).join(', ');
+      };
+
+      const toggleEnrichment = (itemId) => {
+        const exists = config.enrichment.some(e => e.id === itemId);
+        if (exists) {
+          setConfig(prev => ({ ...prev, enrichment: prev.enrichment.filter(e => e.id !== itemId) }));
+        } else {
+          setConfig(prev => ({ ...prev, enrichment: [...prev.enrichment, { id: itemId }] }));
+        }
+      };
+
+      const toggleAlert = (item) => {
+        if (config.alerts.includes(item)) {
+          setConfig(prev => ({ ...prev, alerts: prev.alerts.filter(i => i !== item) }));
+        } else {
+          setConfig(prev => ({ ...prev, alerts: [...prev.alerts, item] }));
+        }
+      };
+
+      const toggleDeliverable = (itemId) => {
+        const exists = config.deliverables.some(d => d.id === itemId);
+        if (exists) {
+          setConfig(prev => ({ ...prev, deliverables: prev.deliverables.filter(d => d.id !== itemId) }));
+        } else {
+          setConfig(prev => ({ ...prev, deliverables: [...prev.deliverables, { id: itemId }] }));
+        }
+      };
+
+      const generateAgentName = () => {
+        const { team, workflow, scope } = config;
+        if (!team || !workflow) return '';
+
+        // Try to get a meaningful name from scope
+        const companyValues = scope.company?.values || [];
+        const drugValues = scope.drug?.values || [];
+        const therapyValues = scope.therapyArea?.values || [];
+        const indicationValues = scope.indication?.values || [];
+
+        if (companyValues.length === 1) return `${companyValues[0]} ${workflowShortNames[workflow]}`;
+        if (drugValues.length === 1) return `${drugValues[0]} Tracker`;
+        if (therapyValues.length === 1) return `${therapyValues[0]} ${workflowShortNames[workflow]}`;
+        if (indicationValues.length === 1) return `${indicationValues[0]} ${workflowShortNames[workflow]}`;
+        if (companyValues.length > 1) return `${companyValues.length} Companies ${workflowShortNames[workflow]}`;
+
+        return `${team} ${workflowShortNames[workflow]}`;
+      };
+
+      // When reaching step 7, trigger onComplete
+      useEffect(() => {
+        if (currentStep === 7 && !config.agentName) {
+          setConfig(prev => ({ ...prev, agentName: generateAgentName() }));
+        }
+      }, [currentStep]);
+
+      if (minimized) {
+        return (
+          <div className="w-16 h-full flex flex-col items-center py-6 border-r border-white/10" style={darkBgPattern}>
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={accentBg}>
+              <Check size={20} className="text-white" />
+            </div>
+            <div className="mt-4 text-white/40 text-xs text-center writing-mode-vertical" style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}>
+              {config.agentName || 'New Agent'}
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="h-full flex flex-col overflow-hidden" style={darkBgPattern}>
+          <div className="flex-1 overflow-auto px-6 py-8">
+            <div style={{ maxWidth: '620px', margin: '0 auto' }}>
+            <h1 className="text-xl font-semibold text-white mb-8">New Agent</h1>
+
+            {/* Step 1: Team */}
+            {currentStep > 1 ? (
+              <div className="flex items-center gap-3 px-4 py-3 bg-white/[0.03] border border-white/[0.06] rounded-xl mb-3">
+                <span className="w-2 h-2 bg-green-500 rounded-full shadow-lg shadow-green-500/40" />
+                <span className="text-xs font-medium text-white/50 w-20 uppercase tracking-wide">Team</span>
+                <span className="text-sm font-medium text-white flex-1">{config.team}</span>
+                <button onClick={() => selectTeam(null)} className="text-xs text-white/40 hover:text-white">Change</button>
+              </div>
+            ) : (
+              <div className="wizard-card bg-white/[0.02] border border-white/[0.08] rounded-xl p-5 mb-3">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="w-7 h-7 bg-white/10 rounded-lg flex items-center justify-center text-xs font-semibold text-white">1</span>
+                  <span className="text-sm font-semibold text-white">Select Your Team</span>
+                </div>
+                <div className="flex gap-2">
+                  {['BD', 'CI', 'Medical', 'Other'].map(t => (
+                    <button key={t} onClick={() => selectTeam(t)}
+                      className="flex-1 h-11 bg-white/[0.04] border border-white/[0.08] rounded-lg text-sm font-medium text-white hover:bg-white/[0.08] hover:border-white/[0.15] transition-all">
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Workflow */}
+            {currentStep > 2 ? (
+              <div className="flex items-center gap-3 px-4 py-3 bg-white/[0.03] border border-white/[0.06] rounded-xl mb-3">
+                <span className="w-2 h-2 bg-green-500 rounded-full shadow-lg shadow-green-500/40" />
+                <span className="text-xs font-medium text-white/50 w-20 uppercase tracking-wide">Workflow</span>
+                <span className="text-sm font-medium text-white flex-1">{getWorkflowName()}</span>
+                <button onClick={() => setConfig(prev => ({ ...prev, workflow: null, foundationApproved: false, enrichmentApproved: false, alertsApproved: false, reportsApproved: false }))} className="text-xs text-white/40 hover:text-white">Change</button>
+              </div>
+            ) : currentStep === 2 ? (
+              <div className="wizard-card bg-white/[0.02] border border-white/[0.08] rounded-xl p-5 mb-3">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="w-7 h-7 bg-white/10 rounded-lg flex items-center justify-center text-xs font-semibold text-white">2</span>
+                  <span className="text-sm font-semibold text-white">Choose a Workflow</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {getWorkflowsForTeam(config.team).map(wf => (
+                    <button key={wf.id} onClick={() => selectWorkflow(wf.id)}
+                      className="h-11 px-4 bg-white/[0.04] border border-white/[0.08] rounded-lg text-xs font-medium text-white text-left hover:bg-white/[0.08] hover:border-white/[0.15] transition-all">
+                      {wf.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 px-4 py-3 border border-white/[0.04] rounded-xl mb-3 opacity-40">
+                <span className="w-7 h-7 bg-white/[0.04] rounded-lg flex items-center justify-center text-xs font-semibold text-white/50">2</span>
+                <span className="text-sm font-medium text-white/50">Choose a Workflow</span>
+              </div>
+            )}
+
+            {/* Step 3: Define Scope */}
+            {currentStep > 3 ? (
+              <div className="flex items-center gap-3 px-4 py-3 bg-white/[0.03] border border-white/[0.06] rounded-xl mb-3">
+                <span className="w-2 h-2 bg-green-500 rounded-full shadow-lg shadow-green-500/40" />
+                <span className="text-xs font-medium text-white/50 w-20 uppercase tracking-wide">Scope</span>
+                <span className="text-sm font-medium text-white flex-1 truncate">{getScopeSummary()}</span>
+                <button onClick={() => { setConfig(prev => ({ ...prev, foundationApproved: false, enrichmentApproved: false, alertsApproved: false, reportsApproved: false, agentName: '' })); setActiveScopeBlock(null); }} className="text-xs text-white/40 hover:text-white">Change</button>
+              </div>
+            ) : currentStep === 3 ? (
+              <div className="wizard-card bg-white/[0.02] border border-white/[0.08] rounded-xl p-5 mb-3">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="w-7 h-7 bg-white/10 rounded-lg flex items-center justify-center text-xs font-semibold text-white">3</span>
+                  <span className="text-sm font-semibold text-white">Define Scope</span>
+                </div>
+                <p className="text-xs text-white/50 mb-4">Select dimensions and add items to define what you're tracking.</p>
+
+                {/* Scope Blocks - Compact grid layout */}
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  {scopeBlocksConfig.map(block => {
+                    const isSelected = isScopeBlockSelected(block.id);
+                    const values = getScopeBlockValues(block.id);
+                    const hasValues = values.length > 0;
+
+                    return (
+                      <button
+                        key={block.id}
+                        onClick={() => toggleScopeBlock(block.id)}
+                        className={`flex items-center gap-2 p-2.5 rounded-lg text-left transition-all ${
+                          isSelected
+                            ? 'bg-white/[0.08] border border-white/[0.15]'
+                            : 'bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.1]'
+                        }`}>
+                        <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                          isSelected
+                            ? 'border-white bg-white'
+                            : 'border-white/[0.15]'
+                        }`}>
+                          {isSelected && (
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          )}
+                        </div>
+                        <span className={`text-xs font-medium flex-1 ${isSelected ? 'text-white' : 'text-white/60'}`}>
+                          {block.label}
+                        </span>
+                        {hasValues && (
+                          <span className="text-xs px-1.5 py-0.5 rounded bg-white/[0.15] text-white/80 font-medium">
+                            {values.length}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Active Block Input Section - Shows below grid */}
+                {activeScopeBlock && isScopeBlockSelected(activeScopeBlock) && (
+                  <div className="border border-white/[0.12] rounded-xl p-4 mb-3 bg-white/[0.03]">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-semibold text-white">
+                        Add {scopeBlocksConfig.find(b => b.id === activeScopeBlock)?.label}
+                      </span>
+                      <button onClick={() => { setActiveScopeBlock(null); setScopeInput(''); }} className="text-xs text-white/40 hover:text-white">
+                        Done
+                      </button>
+                    </div>
+
+                    {/* Existing values as tags */}
+                    {getScopeBlockValues(activeScopeBlock).length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mb-3">
+                        {getScopeBlockValues(activeScopeBlock).map((value, idx) => (
+                          <span key={idx} className="inline-flex items-center gap-1.5 h-6 px-2 bg-white/[0.08] border border-white/[0.1] rounded text-xs text-white/90">
+                            {value}
+                            <button onClick={() => removeScopeValue(activeScopeBlock, value)} className="text-white/40 hover:text-red-400 text-sm leading-none ml-0.5">×</button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Input row */}
+                    <div className="flex gap-2 mb-3">
+                      <input
+                        type="text"
+                        value={scopeInput}
+                        onChange={(e) => setScopeInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addScopeValue(activeScopeBlock);
+                          }
+                        }}
+                        placeholder={scopeBlocksConfig.find(b => b.id === activeScopeBlock)?.placeholder}
+                        className="flex-1 h-8 px-2.5 bg-white/[0.02] border border-white/[0.08] rounded-lg text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/20"
+                      />
+                      <button
+                        onClick={() => addScopeValue(activeScopeBlock)}
+                        className="h-8 px-3 bg-white text-black rounded-lg text-xs font-medium hover:bg-white/90 transition-all">
+                        Add
+                      </button>
+                    </div>
+
+                    {/* CSV Upload Block */}
+                    <div className="border border-dashed border-white/[0.1] rounded-lg p-2.5 bg-white/[0.01]">
+                      <div className="flex items-center gap-2 text-xs text-white/40 mb-2">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                          <polyline points="17 8 12 3 7 8" />
+                          <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
+                        <span>Bulk upload multiple items</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <label className="flex-1 h-8 px-3 bg-white/[0.04] border border-white/[0.08] rounded-lg text-xs font-medium text-white/60 cursor-pointer hover:bg-white/[0.06] hover:text-white transition-all flex items-center justify-center gap-2">
+                          <span>Upload CSV</span>
+                          <input
+                            type="file"
+                            accept=".csv"
+                            className="hidden"
+                            onChange={(e) => handleScopeCsvUpload(e.target.files?.[0])}
+                          />
+                        </label>
+                        <button
+                          onClick={downloadScopeCsvTemplate}
+                          className="h-8 px-3 bg-white/[0.04] border border-white/[0.08] rounded-lg text-xs font-medium text-white/60 hover:bg-white/[0.06] hover:text-white transition-all flex items-center gap-1.5">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                          </svg>
+                          <span>Template</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <button onClick={() => setConfig(prev => ({ ...prev, foundationApproved: true }))}
+                  disabled={getScopeCount() === 0}
+                  className="w-full h-11 mt-4 bg-white text-black rounded-lg text-sm font-medium hover:bg-white/90 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                  Continue
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 px-4 py-3 border border-white/[0.04] rounded-xl mb-3 opacity-40">
+                <span className="w-7 h-7 bg-white/[0.04] rounded-lg flex items-center justify-center text-xs font-semibold text-white/50">3</span>
+                <span className="text-sm font-medium text-white/50">Define Scope</span>
+              </div>
+            )}
+
+            {/* Step 4: Enrichment */}
+            {currentStep > 4 ? (
+              <div className="flex items-center gap-3 px-4 py-3 bg-white/[0.03] border border-white/[0.06] rounded-xl mb-3">
+                <span className="w-2 h-2 bg-green-500 rounded-full shadow-lg shadow-green-500/40" />
+                <span className="text-xs font-medium text-white/50 w-20 uppercase tracking-wide">Enrichment</span>
+                <span className="text-sm font-medium text-white flex-1">{config.enrichment.length} Data Points</span>
+                <button onClick={() => setConfig(prev => ({ ...prev, enrichmentApproved: false, alertsApproved: false, reportsApproved: false }))} className="text-xs text-white/40 hover:text-white">Change</button>
+              </div>
+            ) : currentStep === 4 ? (
+              <div className="wizard-card bg-white/[0.02] border border-white/[0.08] rounded-xl p-5 mb-3">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="w-7 h-7 bg-white/10 rounded-lg flex items-center justify-center text-xs font-semibold text-white">4</span>
+                  <span className="text-sm font-semibold text-white">Enrichment</span>
+                </div>
+                <p className="text-xs text-white/50 mb-4">Select data points to enrich your tracking.</p>
+
+                {/* Main enrichment checkboxes */}
+                <div className="space-y-2 mb-4">
+                  {enrichmentConfig.main.items.map(item => (
+                    <button
+                      key={item.id}
+                      onClick={() => toggleEnrichment(item.id)}
+                      className={`w-full flex items-center gap-2 p-2.5 rounded-lg text-left transition-all ${
+                        isEnrichmentSelected(item.id)
+                          ? 'bg-white/[0.08] border border-white/[0.15]'
+                          : 'bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.1]'
+                      }`}>
+                      <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                        isEnrichmentSelected(item.id)
+                          ? 'border-white bg-white'
+                          : 'border-white/[0.15]'
+                      }`}>
+                        {isEnrichmentSelected(item.id) && (
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className={`text-xs font-medium ${isEnrichmentSelected(item.id) ? 'text-white' : 'text-white/60'}`}>
+                        {item.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Custom enrichment text input */}
+                <div className="border border-white/[0.08] rounded-xl p-3 bg-white/[0.02]">
+                  <label className="text-xs font-medium text-white/70 block mb-2">Custom Requirements (Optional)</label>
+                  <textarea
+                    value={config.customEnrichmentText || ''}
+                    onChange={(e) => setConfig(prev => ({ ...prev, customEnrichmentText: e.target.value }))}
+                    placeholder="Describe any additional data points you need tracked..."
+                    className="w-full h-20 px-3 py-2 bg-white/[0.02] border border-white/[0.08] rounded-lg text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/20 resize-none"
+                  />
+                </div>
+
+                <button onClick={() => setConfig(prev => ({ ...prev, enrichmentApproved: true }))}
+                  disabled={config.enrichment.length === 0 && !config.customEnrichmentText?.trim()}
+                  className="w-full h-11 mt-4 bg-white text-black rounded-lg text-sm font-medium hover:bg-white/90 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                  Continue
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 px-4 py-3 border border-white/[0.04] rounded-xl mb-3 opacity-40">
+                <span className="w-7 h-7 bg-white/[0.04] rounded-lg flex items-center justify-center text-xs font-semibold text-white/50">4</span>
+                <span className="text-sm font-medium text-white/50">Enrichment</span>
+              </div>
+            )}
+
+            {/* Step 5: Alerts */}
+            {currentStep > 5 ? (
+              <div className="flex items-center gap-3 px-4 py-3 bg-white/[0.03] border border-white/[0.06] rounded-xl mb-3">
+                <span className="w-2 h-2 bg-green-500 rounded-full shadow-lg shadow-green-500/40" />
+                <span className="text-xs font-medium text-white/50 w-20 uppercase tracking-wide">Alerts</span>
+                <span className="text-sm font-medium text-white flex-1">{config.alerts.length > 0 ? `${config.alerts.length} Configured` : 'Skipped'}</span>
+                <button onClick={() => setConfig(prev => ({ ...prev, alertsApproved: false, reportsApproved: false }))} className="text-xs text-white/40 hover:text-white">Change</button>
+              </div>
+            ) : currentStep === 5 ? (
+              <div className="wizard-card bg-white/[0.02] border border-white/[0.08] rounded-xl p-5 mb-3">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="w-7 h-7 bg-white/10 rounded-lg flex items-center justify-center text-xs font-semibold text-white">5</span>
+                  <span className="text-sm font-semibold text-white">Alerts</span>
+                  <span className="ml-auto text-xs text-white/40 bg-white/[0.06] px-2 py-1 rounded">Optional</span>
+                </div>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {getAlertsForWorkflow(config.workflow).alerts.map(alert => (
+                    <button key={alert} onClick={() => toggleAlert(alert)}
+                      className={`h-8 px-3 rounded-full text-xs font-medium transition-all ${
+                        config.alerts.includes(alert)
+                          ? 'bg-white text-black'
+                          : 'bg-white/[0.04] border border-white/[0.06] text-white/70 hover:bg-white/[0.08]'
+                      }`}>
+                      {alert}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => setConfig(prev => ({ ...prev, alerts: [], alertNotes: {}, alertsApproved: true }))}
+                    className="flex-1 h-11 bg-transparent border border-white/10 text-white/60 rounded-lg text-sm font-medium hover:bg-white/[0.04] transition-all">
+                    Skip
+                  </button>
+                  <button onClick={() => setConfig(prev => ({ ...prev, alertsApproved: true }))}
+                    disabled={config.alerts.length === 0}
+                    className="flex-1 h-11 bg-white text-black rounded-lg text-sm font-medium hover:bg-white/90 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                    Continue
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 px-4 py-3 border border-white/[0.04] rounded-xl mb-3 opacity-40">
+                <span className="w-7 h-7 bg-white/[0.04] rounded-lg flex items-center justify-center text-xs font-semibold text-white/50">5</span>
+                <span className="text-sm font-medium text-white/50">Alerts</span>
+                <span className="ml-auto text-xs text-white/30">Optional</span>
+              </div>
+            )}
+
+            {/* Step 6: Deliverables */}
+            {currentStep > 6 ? (
+              <div className="flex items-center gap-3 px-4 py-3 bg-white/[0.03] border border-white/[0.06] rounded-xl mb-3">
+                <span className="w-2 h-2 bg-green-500 rounded-full shadow-lg shadow-green-500/40" />
+                <span className="text-xs font-medium text-white/50 w-20 uppercase tracking-wide">Reports</span>
+                <span className="text-sm font-medium text-white flex-1">{config.deliverables.length > 0 ? `${config.deliverables.length} Selected` : 'Skipped'}</span>
+                <button onClick={() => setConfig(prev => ({ ...prev, reportsApproved: false }))} className="text-xs text-white/40 hover:text-white">Change</button>
+              </div>
+            ) : currentStep === 6 ? (
+              <div className="wizard-card bg-white/[0.02] border border-white/[0.08] rounded-xl p-5 mb-3">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="w-7 h-7 bg-white/10 rounded-lg flex items-center justify-center text-xs font-semibold text-white">6</span>
+                  <span className="text-sm font-semibold text-white">Deliverables</span>
+                  <span className="ml-auto text-xs text-white/40 bg-white/[0.06] px-2 py-1 rounded">Optional</span>
+                </div>
+                {getDeliverablesCategories().map(category => (
+                  <div key={category.key} className="mb-4 last:mb-0">
+                    <div className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">{category.label}</div>
+                    <div className="flex flex-wrap gap-2">
+                      {category.items.map(item => (
+                        <button key={item.id} onClick={() => toggleDeliverable(item.id)}
+                          className={`h-8 px-3 rounded-lg text-xs font-medium transition-all ${
+                            isDeliverableSelected(item.id)
+                              ? 'bg-white text-black'
+                              : 'bg-white/[0.04] border border-white/[0.06] text-white/70 hover:bg-white/[0.08]'
+                          }`}>
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                <div className="flex gap-2 mt-4">
+                  <button onClick={() => setConfig(prev => ({ ...prev, reportsApproved: true }))}
+                    className="flex-1 h-11 bg-transparent border border-white/10 text-white/60 rounded-lg text-sm font-medium hover:bg-white/[0.04] transition-all">
+                    Skip
+                  </button>
+                  <button onClick={() => setConfig(prev => ({ ...prev, reportsApproved: true }))}
+                    className="flex-1 h-11 bg-white text-black rounded-lg text-sm font-medium hover:bg-white/90 transition-all">
+                    Continue
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 px-4 py-3 border border-white/[0.04] rounded-xl mb-3 opacity-40">
+                <span className="w-7 h-7 bg-white/[0.04] rounded-lg flex items-center justify-center text-xs font-semibold text-white/50">6</span>
+                <span className="text-sm font-medium text-white/50">Deliverables</span>
+                <span className="ml-auto text-xs text-white/30">Optional</span>
+              </div>
+            )}
+
+            {/* Step 7: Final - Name and Create */}
+            {currentStep === 7 && (
+              <div className="wizard-card bg-white/[0.02] border border-white/[0.08] rounded-xl p-6 mt-4">
+                <div className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-3">Agent Name</div>
+                <input
+                  type="text"
+                  value={config.agentName}
+                  onChange={(e) => setConfig(prev => ({ ...prev, agentName: e.target.value }))}
+                  placeholder="Enter agent name..."
+                  className="w-full h-12 px-4 bg-white/[0.02] border border-white/10 rounded-lg text-base font-medium text-white placeholder-white/30 focus:outline-none focus:border-white/25 mb-4"
+                />
+                <button onClick={onComplete}
+                  disabled={!config.agentName.trim()}
+                  className="w-full h-12 bg-white text-black rounded-lg text-sm font-semibold hover:bg-white/90 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                  Generate Plan
+                </button>
+              </div>
+            )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ============================================
+    // PLAN PREVIEW PANEL
+    // ============================================
+    // Helper to generate objective description from config
+    const generateObjectiveDescription = (config) => {
+      const workflowName = allWorkflows.find(w => w.id === config.workflow)?.name || 'Custom';
+      const scopeEntries = Object.entries(config.scope).filter(([_, v]) => v.selected && v.values?.length > 0);
+
+      if (scopeEntries.length === 0) return `Conduct ${workflowName.toLowerCase()} analysis.`;
+
+      // Build a readable objective
+      const scopeParts = scopeEntries.map(([id, data]) => {
+        const block = scopeBlocksConfig.find(b => b.id === id);
+        const label = block?.label?.toLowerCase() || id;
+        if (data.values.length === 1) return `${data.values[0]}`;
+        if (data.values.length <= 3) return data.values.join(', ');
+        return `${data.values.length} ${label}s`;
+      });
+
+      return `${workflowName} for ${scopeParts.join(' across ')}. Identify opportunities and track developments based on selected enrichment criteria.`;
+    };
+
+    // Get scope steps for the Data section
+    const getScopeDataSteps = (scope) => {
+      const entries = Object.entries(scope).filter(([_, v]) => v.selected && v.values?.length > 0);
+      return entries.map(([id, data]) => {
+        const block = scopeBlocksConfig.find(b => b.id === id);
+        return {
+          title: `Identify ${block?.label || id}`,
+          description: data.values.join(', ')
+        };
+      });
+    };
+
+    // Get enrichment steps for the Data section
+    const getEnrichmentDataSteps = (enrichment) => {
+      return enrichment.map(e => {
+        const allItems = Object.values(enrichmentConfig).flatMap(cat => cat.items);
+        const item = allItems.find(i => i.id === e.id);
+        return {
+          title: `Analyze ${item?.label || e.id}`,
+          description: `Gather and evaluate ${item?.label?.toLowerCase() || e.id} data for identified entities.`
+        };
+      });
+    };
+
+    function PlanPreview({ config, onExecute, onEditPlan }) {
+      const [expandedSection, setExpandedSection] = useState(1);
+
+      // Combine scope + enrichment into Data steps
+      const dataSteps = [
+        ...getScopeDataSteps(config.scope),
+        ...getEnrichmentDataSteps(config.enrichment)
+      ];
+
+      // Transform wizard config into plan structure
+      const planSections = [
+        {
+          title: 'Objective',
+          steps: [
+            { title: generateObjectiveDescription(config) }
+          ]
+        },
+        {
+          title: 'Data',
+          steps: dataSteps.length > 0 ? dataSteps : [{ title: 'No data collection configured' }]
+        },
+        {
+          title: 'Alerts',
+          steps: config.alerts.length > 0 ? config.alerts.map(alert => ({
+            title: `Monitor ${alert}`,
+            description: `Track and alert on ${alert.toLowerCase()} events.`
+          })) : [{ title: 'No alerts configured', description: 'Alerts were skipped during setup.' }]
+        },
+        {
+          title: 'Reports',
+          steps: config.deliverables.length > 0 ? config.deliverables.map(d => {
+            const allItems = Object.values(deliverablesConfig).flatMap(cat => cat.items);
+            const item = allItems.find(i => i.id === d.id);
+            return {
+              title: `Generate ${item?.label || d.id}`,
+              description: `Create ${item?.label?.toLowerCase() || d.id} deliverables.`
+            };
+          }) : [{ title: 'No reports configured', description: 'Deliverables were skipped during setup.' }]
+        }
+      ];
+
+      return (
+        <div className="h-full flex flex-col slide-in-right" style={darkBgPattern}>
+          {/* Plan Content */}
+          <div className="flex-1 overflow-auto py-6 px-6">
+            <div style={{ maxWidth: '620px', margin: '0 auto' }}>
+              {/* Guidance Header */}
+              <div className="mb-6 pb-6 border-b border-white/10">
+                <div className="flex items-start justify-between gap-4 mb-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold text-white" style={accentBg}>
+                        <Check size={14} strokeWidth={3} />
+                      </div>
+                      <h2 className="text-base font-semibold text-white">Plan Generated</h2>
+                    </div>
+                    <p className="text-xs text-white/50 leading-relaxed">
+                      Review your agent configuration below. Make changes if needed, or execute the plan to start tracking.
+                    </p>
+                  </div>
+                  <button
+                    onClick={onEditPlan}
+                    className="flex items-center gap-2 h-9 px-4 bg-white/[0.08] border border-white/[0.15] rounded-lg text-xs font-medium text-white hover:bg-white/[0.12] hover:border-white/[0.25] transition-all flex-shrink-0">
+                    <Pencil size={13} />
+                    <span>Edit Plan</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Agent Info */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-white mb-1">{config.agentName}</h3>
+                <p className="text-xs text-white/50">{config.team} • {allWorkflows.find(w => w.id === config.workflow)?.name}</p>
+              </div>
+
+              {planSections.map((section, sectionIndex) => {
+                const isObjective = sectionIndex === 0;
+                const isExpanded = isObjective || expandedSection === sectionIndex;
+                const emptyMessages = ['No alerts configured', 'No reports configured', 'No data collection configured'];
+                const hasContent = section.steps.length > 0 && !emptyMessages.includes(section.steps[0].title);
+
+                return (
+                  <div key={sectionIndex} className="mb-5">
+                    <div
+                      className="flex items-center gap-2 mb-3 cursor-pointer hover:opacity-80"
+                      onClick={() => !isObjective && setExpandedSection(isExpanded ? null : sectionIndex)}
+                    >
+                      {!isObjective && (
+                        <ChevronRight size={12} className={`text-white/40 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                      )}
+                      <span className="text-xs text-white/40 uppercase tracking-wider font-semibold">{section.title}</span>
+                      <div className="flex-1 h-px bg-white/10"></div>
+                      {!isObjective && hasContent && (
+                        <span className="text-xs text-white/30">{section.steps.length}</span>
+                      )}
+                    </div>
+
+                    {isExpanded && section.steps.map((step, stepIndex) => (
+                      <div key={stepIndex} className="flex gap-3 ml-1 mb-3">
+                        {sectionIndex > 0 && hasContent && (
+                          <div className="flex flex-col items-center pt-1">
+                            <div className="flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center border border-white/20">
+                              <div className="w-1.5 h-1.5 rounded-full bg-white/40"></div>
+                            </div>
+                            {stepIndex < section.steps.length - 1 && (
+                              <div className="w-0.5 flex-1 my-1 bg-white/10"></div>
+                            )}
+                          </div>
+                        )}
+                        <div className="flex-1 pb-1">
+                          {step.description ? (
+                            <>
+                              <h4 className="text-xs font-medium text-white mb-1">{step.title}</h4>
+                              <p className="text-xs text-white/50" style={{ lineHeight: '16px' }}>{step.description}</p>
+                            </>
+                          ) : (
+                            <p className="text-xs text-white/80" style={{ lineHeight: '16px' }}>{step.title}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
+
+              {/* Execute Button - Inside centered container */}
+              <div className="mt-8 pt-5 border-t border-white/10">
+                <button onClick={onExecute}
+                  className="w-full h-12 rounded-lg text-sm font-semibold text-white flex items-center justify-center gap-2 hover:opacity-90 transition-all"
+                  style={accentBg}>
+                  <Play size={16} fill="currentColor" />
+                  Execute Plan
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ============================================
+    // STREAM VIEW (Full execution view)
+    // ============================================
+    function StreamView({ config }) {
+      const [activeTab, setActiveTab] = useState('data');
+      const [chatInput, setChatInput] = useState('');
+      const [planCollapsed, setPlanCollapsed] = useState(false);
+      const [chatCollapsed, setChatCollapsed] = useState(false);
+      const [expandedSection, setExpandedSection] = useState(1);
+      const [executionStatus, setExecutionStatus] = useState('complete'); // 'executing' or 'complete'
+
+      // Sample chat messages
+      const [chatMessages] = useState([
+        {
+          type: 'user',
+          text: 'What are the key findings from the latest trial data?',
+          timestamp: '2:34 PM'
+        },
+        {
+          type: 'agent',
+          text: 'Based on the analyzed trial data, three key findings emerged: 1) The primary endpoint showed a 23% improvement over placebo, 2) Safety profile remained consistent with previous studies, and 3) Patient-reported outcomes indicated significant quality of life improvements.',
+          timestamp: '2:34 PM'
+        },
+        {
+          type: 'user',
+          text: 'How does this compare to competitor products?',
+          timestamp: '2:36 PM'
+        },
+        {
+          type: 'agent',
+          text: 'Compared to the competitive landscape, this represents a moderate advantage. The efficacy is approximately 15% higher than Drug X and comparable to Drug Y, while maintaining a more favorable safety profile with 30% fewer adverse events.',
+          timestamp: '2:36 PM'
+        }
+      ]);
+
+      // Combine scope + enrichment into Data steps
+      const dataSteps = [
+        ...getScopeDataSteps(config.scope),
+        ...getEnrichmentDataSteps(config.enrichment)
+      ];
+
+      // Transform wizard config into plan structure
+      const planSections = [
+        {
+          title: 'Objective',
+          steps: [
+            { title: generateObjectiveDescription(config) }
+          ]
+        },
+        {
+          title: 'Data',
+          steps: dataSteps.length > 0 ? dataSteps : [{ title: 'No data collection configured' }]
+        },
+        {
+          title: 'Alerts',
+          steps: config.alerts.length > 0 ? config.alerts.map(alert => ({
+            title: `Monitor ${alert}`,
+            description: `Track and alert on ${alert.toLowerCase()} events.`
+          })) : [{ title: 'No alerts configured', description: 'Alerts were skipped during setup.' }]
+        },
+        {
+          title: 'Reports',
+          steps: config.deliverables.length > 0 ? config.deliverables.map(d => {
+            const allItems = Object.values(deliverablesConfig).flatMap(cat => cat.items);
+            const item = allItems.find(i => i.id === d.id);
+            return {
+              title: `Generate ${item?.label || d.id}`,
+              description: `Create ${item?.label?.toLowerCase() || d.id} deliverables.`
+            };
+          }) : [{ title: 'No reports configured', description: 'Deliverables were skipped during setup.' }]
+        }
+      ];
+
+      // Generate data based on scope configuration
+      const generateTableData = () => {
+        const scopeValues = Object.entries(config.scope).filter(([_, v]) => v.selected && v.values?.length > 0);
+        if (scopeValues.length === 0) return [];
+
+        // Get the first scope type to determine what we're tracking
+        const [firstId, firstData] = scopeValues[0];
+        const block = scopeBlocksConfig.find(b => b.id === firstId);
+
+        // Expanded sample data with more rows
+        const companies = ['Eli Lilly', 'Novo Nordisk', 'Amgen', 'Viking', 'Altimmune', 'Pfizer', 'Roche', 'Boehringer', 'Zealand', 'Innovent', 'Structure', 'Terns', 'Sciwind', 'Hanmi', 'Eccogene', 'Sun Pharma', 'Acadia', 'BioNTech'];
+        const drugs = ['Retatrutide', 'CagriSema', 'MariTide', 'VK2735', 'Pemvidutide', 'Danuglipron', 'CT-996', 'BI 456906', 'Petrelintide', 'Mazdutide', 'GSBR-1290', 'TERN-601', 'XW004', 'Efinopegdutide', 'ECC5004', 'GL0034', 'ACP-044', 'BNT-321'];
+        const targets = ['GLP-1/GIP/GCG', 'GLP-1/Amylin', 'GLP-1/GIPR', 'GLP-1/GIP', 'GLP-1/GCG', 'GLP-1', 'GLP-1', 'GLP-1/GCG', 'Amylin', 'GLP-1/GCG', 'GLP-1', 'GLP-1', 'GLP-1', 'GLP-1/GCG', 'GLP-1', 'GLP-1', 'GLP-1/GIP', 'GLP-1'];
+        const phases = ['Phase 3', 'Phase 3', 'Phase 2', 'Phase 2b', 'Phase 2b', 'Phase 2b', 'Phase 2', 'Phase 2', 'Phase 2', 'Phase 3', 'Phase 2', 'Phase 1b', 'Phase 2', 'Phase 2', 'Phase 1b', 'Phase 1b', 'Phase 2', 'Phase 1b'];
+        const efficacies = ['+9.2%', '+7.7%', '-0.5%', '-0.3%', '+0.6%', '-4.0%', 'TBD', '-1.4%', '-4.6%', '+3.6%', '-7.0%', 'TBD', '-2.7%', '-4.7%', 'TBD', 'TBD', '+1.2%', 'TBD'];
+        const efficacyNotes = ['24.2% weight loss', '22.7% weight loss', '14.5% weight loss', '14.7% weight loss', '15.6% weight loss', '11.0% weight loss', 'Ph2 ongoing', '13.6% weight loss', '10.4% weight loss', '18.6% weight loss', '8.0% weight loss', 'Ph1 ongoing', '12.3% weight loss', '10.3% weight loss', 'Ph1 ongoing', 'Ph1 ongoing', '16.2% weight loss', 'Ph1 ongoing'];
+        const rightsOptions = ['Not available', 'Not available', 'Regional possible', 'Global available', 'Global available', 'Not available', 'Not available', 'Not available', 'Ex-US available', 'Ex-China available', 'Global available', 'Global available', 'Ex-China available', 'Ex-Korea available', 'Ex-China available', 'Global available', 'Global available', 'Ex-US available'];
+        const runways = ['>36 mo', '>36 mo', '>36 mo', '11 mo', '9 mo', '>36 mo', '>36 mo', '>36 mo', '18 mo', '24 mo', '14 mo', '16 mo', '10 mo', '22 mo', '18 mo', '>36 mo', '13 mo', '15 mo'];
+        const likelihoods = ['None', 'None', 'Medium', 'High', 'High', 'None', 'None', 'None', 'Low', 'High', 'Low', 'Medium', 'Medium', 'Medium', 'Medium', 'Low', 'Medium', 'Low'];
+
+        // Create expanded dataset
+        const baseData = companies.map((company, idx) => ({
+          id: idx + 1,
+          company: company,
+          drug: drugs[idx],
+          target: targets[idx],
+          phase: phases[idx],
+          efficacyVsSoc: efficacies[idx],
+          efficacyNote: efficacyNotes[idx],
+          rights: rightsOptions[idx],
+          cashRunway: runways[idx],
+          dealLikelihood: likelihoods[idx],
+          updated: `2025-${12 - Math.floor(idx / 5)}-${String(28 - (idx % 28)).padStart(2, '0')}`
+        }));
+
+        return baseData;
+      };
+
+      const tableData = generateTableData();
+
+      return (
+        <div className="h-full flex overflow-hidden" style={darkBgPattern}>
+          {/* Left Sidebar - Plan (20%) */}
+          <aside
+            className={`flex flex-col flex-shrink-0 transition-all duration-300 border-r border-white/10 ${planCollapsed ? 'w-10 pl-2 pr-1' : 'pl-4 pr-3'}`}
+            style={{ width: planCollapsed ? undefined : '20%', minWidth: planCollapsed ? undefined : '240px' }}
+          >
+            <div className={`h-12 mt-3 flex items-center flex-shrink-0 ${planCollapsed ? 'justify-center' : 'justify-between'}`}>
+              {!planCollapsed && (
+                <div className="flex items-center gap-2">
+                  <div className="w-1 h-5 rounded-full" style={accentBg}></div>
+                  <span className="text-sm font-bold text-white uppercase tracking-wide">
+                    Plan
+                  </span>
+                </div>
+              )}
+              <div className="flex items-center gap-1">
+                {!planCollapsed && (
+                  <>
+                    <Tooltip label="Edit plan">
+                      <button className="h-7 w-7 flex items-center justify-center text-white hover:opacity-70">
+                        <Pencil size={15} />
+                      </button>
+                    </Tooltip>
+                    <Tooltip label="Execute all">
+                      <button className="h-7 w-7 flex items-center justify-center text-white hover:opacity-70">
+                        <Play size={15} fill="currentColor" />
+                      </button>
+                    </Tooltip>
+                  </>
+                )}
+                <Tooltip label={planCollapsed ? "Expand plan" : "Collapse plan"}>
+                  <button
+                    onClick={() => setPlanCollapsed(!planCollapsed)}
+                    className="h-7 w-7 flex items-center justify-center text-white hover:opacity-70"
+                  >
+                    <CollapsePanelLeftIcon size={16} />
+                  </button>
+                </Tooltip>
+              </div>
+            </div>
+
+            {!planCollapsed && (
+              <div className="flex-1 overflow-auto py-3">
+                {planSections.map((section, sectionIndex) => {
+                  const isObjective = sectionIndex === 0;
+                  const isExpanded = isObjective || expandedSection === sectionIndex;
+                  const emptyMessages = ['No alerts configured', 'No reports configured', 'No data collection configured'];
+                  const hasContent = section.steps.length > 0 && !emptyMessages.includes(section.steps[0].title);
+
+                  return (
+                    <div key={sectionIndex} className="mb-3">
+                      <div
+                        className="flex items-center gap-2 mb-2 cursor-pointer hover:opacity-80"
+                        onClick={() => {
+                          if (isObjective) {
+                            setActiveTab('exec');
+                            setExpandedSection(null);
+                          } else {
+                            setExpandedSection(isExpanded ? null : sectionIndex);
+                            const tabMap = { 1: 'data', 2: 'alerts', 3: 'reports' };
+                            if (tabMap[sectionIndex]) setActiveTab(tabMap[sectionIndex]);
+                          }
+                        }}
+                      >
+                        {!isObjective && (
+                          <ChevronRight size={12} className={`text-white/40 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                        )}
+                        <span className="text-xs text-white/40 uppercase tracking-wider font-medium">{section.title}</span>
+                        <div className="flex-1 h-px bg-white/10"></div>
+                        {!isObjective && hasContent && (
+                          <span className="text-xs text-white/30 mr-1">{section.steps.length}</span>
+                        )}
+                        {sectionIndex > 0 && isExpanded && hasContent && (
+                          <Tooltip label={`Execute ${section.title}`}>
+                            <button
+                              className="w-5 h-5 rounded flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Play size={10} fill="currentColor" />
+                            </button>
+                          </Tooltip>
+                        )}
+                      </div>
+
+                      {isExpanded && section.steps.map((step, stepIndex) => (
+                        <div key={stepIndex} className="flex gap-3 ml-1">
+                          {sectionIndex > 0 && hasContent && (
+                            <div className="flex flex-col items-center">
+                              <div className="flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center" style={accentBg}>
+                                <Check size={9} className="text-white" strokeWidth={3} />
+                              </div>
+                              {stepIndex < section.steps.length - 1 && (
+                                <div className="w-0.5 flex-1 my-1" style={{ backgroundColor: 'rgba(123, 97, 255, 0.3)' }}></div>
+                              )}
+                            </div>
+                          )}
+                          <div className="pb-3">
+                            {step.description ? (
+                              <>
+                                <h4 className="font-medium text-white mb-0.5" style={type.xs}>{step.title}</h4>
+                                <p className="text-white/50" style={{ fontSize: '11px', lineHeight: '15px' }}>{step.description}</p>
+                              </>
+                            ) : (
+                              <p className="text-white/80" style={{ fontSize: '11px', lineHeight: '15px' }}>{step.title}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </aside>
+
+          {/* Main Content Area - Data Section (60%) */}
+          <div className="flex-1 flex flex-col overflow-hidden" style={{ width: '60%', minWidth: '500px' }}>
+            {/* Data Section Header - Same level as Plan/Chat */}
+            <div className="flex-shrink-0 border-b border-white/10">
+              <div className="h-12 mt-3 px-6 flex items-center">
+                <div className="flex items-center gap-2">
+                  <div className="w-1 h-5 rounded-full" style={accentBg}></div>
+                  <span className="text-sm font-bold text-white uppercase tracking-wide">
+                    Data
+                  </span>
+                </div>
+              </div>
+              {/* Tabs - Spreadsheet style */}
+              <div className="px-6 flex items-end gap-0.5">
+                {['Exec Summary', 'Raw Data', 'Alerts', 'Reports'].map((tab) => {
+                  const tabKey = tab === 'Exec Summary' ? 'exec' : tab === 'Raw Data' ? 'data' : tab.toLowerCase();
+                  const isActive = activeTab === tabKey;
+                  return (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tabKey)}
+                      className={`px-4 py-2 text-xs font-medium transition-all relative ${
+                        isActive
+                          ? 'text-white bg-white/[0.08]'
+                          : 'text-white/50 hover:text-white/70 hover:bg-white/[0.03]'
+                      }`}
+                      style={{
+                        borderTopLeftRadius: '6px',
+                        borderTopRightRadius: '6px',
+                        borderBottom: isActive ? '2px solid rgba(123, 97, 255, 1)' : '2px solid transparent'
+                      }}
+                    >
+                      {tab}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Data Content */}
+            <div className="flex-1 overflow-auto px-6 py-4">
+                  {activeTab === 'exec' && (
+                    <div className="h-full flex flex-col">
+                      <div className="mb-6">
+                        <h3 className="text-sm font-semibold text-white mb-2">Executive Summary</h3>
+                        <p className="text-white/50 text-xs">
+                          {config.team} • {allWorkflows.find(w => w.id === config.workflow)?.name} • {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                        </p>
+                      </div>
+
+                      {/* Key Insights */}
+                      {tableData.length > 0 && (
+                        <div className="mb-6 p-5 rounded-xl border-2 border-green-500/30 bg-green-500/10">
+                          <p className="text-green-400 font-semibold mb-2 text-xs uppercase tracking-wider">Key Insight</p>
+                          <p className="text-white text-sm font-medium mb-2">
+                            {tableData.filter(d => d.dealLikelihood === 'High').length} high-priority targets identified
+                          </p>
+                          <p className="text-white/70 text-xs leading-relaxed">
+                            Based on analysis of {tableData.length} items across {Object.keys(config.scope).filter(k => config.scope[k].selected).length} dimensions,
+                            focusing on opportunities with {config.enrichment.length} enrichment criteria applied.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Summary Cards */}
+                      <div className="grid grid-cols-3 gap-4 mb-6">
+                        <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08]">
+                          <p className="text-white/50 text-xs mb-1">Tracked Items</p>
+                          <p className="text-white font-bold text-2xl mb-1">{tableData.length}</p>
+                          <p className="text-white/40 text-xs">Active monitoring</p>
+                        </div>
+                        <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08]">
+                          <p className="text-white/50 text-xs mb-1">Enrichment Data</p>
+                          <p className="text-white font-bold text-2xl mb-1">{config.enrichment.length}</p>
+                          <p className="text-white/40 text-xs">Data fields tracked</p>
+                        </div>
+                        <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08]">
+                          <p className="text-white/50 text-xs mb-1">Alerts</p>
+                          <p className="text-white font-bold text-2xl mb-1">{config.alerts.length}</p>
+                          <p className="text-white/40 text-xs">Event monitoring</p>
+                        </div>
+                      </div>
+
+                      {/* Objective */}
+                      <div className="mb-4">
+                        <p className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-3">Objective</p>
+                        <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08]">
+                          <p className="text-white/80 text-sm leading-relaxed">{generateObjectiveDescription(config)}</p>
+                        </div>
+                      </div>
+
+                      {/* Scope Summary */}
+                      <div>
+                        <p className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-3">Tracking Scope</p>
+                        <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08]">
+                          <div className="space-y-3">
+                            {Object.entries(config.scope).filter(([_, v]) => v.selected && v.values?.length > 0).map(([id, data]) => {
+                              const block = scopeBlocksConfig.find(b => b.id === id);
+                              return (
+                                <div key={id} className="flex items-start gap-3">
+                                  <span className="text-white/50 text-xs font-medium min-w-20">{block?.label}:</span>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {data.values.slice(0, 4).map((val, idx) => (
+                                      <span key={idx} className="text-xs px-2.5 py-1 bg-white/[0.06] border border-white/[0.08] rounded text-white/80">{val}</span>
+                                    ))}
+                                    {data.values.length > 4 && (
+                                      <span className="text-xs px-2.5 py-1 text-white/50">+{data.values.length - 4} more</span>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'data' && (
+                    <div className="h-full flex flex-col">
+                      <h2 className="font-semibold text-white mb-5 text-sm">{tableData.length} items tracked — {tableData.filter(d => d.dealLikelihood === 'High').length} meet all criteria</h2>
+                      {tableData.length > 0 ? (
+                        <div className="flex-1 overflow-auto -mx-6 px-6">
+                          <table className="w-full text-xs border-collapse">
+                            <thead className="sticky top-0" style={{ backgroundColor: '#000', backgroundImage: 'radial-gradient(rgba(123, 97, 255, 0.15) 1px, transparent 1px)', backgroundSize: '16px 16px' }}>
+                              <tr className="border-b-2 border-white/[0.1]">
+                                <th className="text-left py-2.5 px-3 font-semibold text-white/60">Company</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-white/60">Drug</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-white/60">Target</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-white/60">Phase</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-white/60">Efficacy vs SOC</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-white/60">Rights</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-white/60">Cash Runway</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-white/60">Deal Likelihood</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {tableData.map((row) => (
+                                <tr key={row.id} className="border-b border-white/[0.05] hover:bg-white/[0.02]">
+                                  <td className="py-2.5 px-3 font-medium text-white">{row.company}</td>
+                                  <td className="py-2.5 px-3 text-white/70">{row.drug}</td>
+                                  <td className="py-2.5 px-3 text-white/60">{row.target}</td>
+                                  <td className="py-2.5 px-3 text-white/60">{row.phase}</td>
+                                  <td className="py-2.5 px-3">
+                                    <span className="text-white/70">{row.efficacyVsSoc}</span>
+                                    <span className="text-white/50 block text-xs mt-0.5">{row.efficacyNote}</span>
+                                  </td>
+                                  <td className="py-2.5 px-3">
+                                    <span className={
+                                      row.rights === 'Global available' ? 'text-green-400 font-medium' :
+                                      row.rights === 'Not available' ? 'text-red-400' :
+                                      'text-yellow-400'
+                                    }>
+                                      {row.rights}
+                                    </span>
+                                  </td>
+                                  <td className="py-2.5 px-3">
+                                    <span className={parseInt(row.cashRunway) < 12 ? 'text-red-400 font-medium' : 'text-white/60'}>
+                                      {row.cashRunway}
+                                    </span>
+                                  </td>
+                                  <td className="py-2.5 px-3">
+                                    <span className={`font-medium ${
+                                      row.dealLikelihood === 'High' ? 'text-green-400' :
+                                      row.dealLikelihood === 'Medium' ? 'text-yellow-400' :
+                                      'text-white/40'
+                                    }`}>
+                                      {row.dealLikelihood}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <div className="flex-1 flex items-center justify-center">
+                          <div className="text-center">
+                            <div className="w-16 h-16 rounded-full bg-white/[0.03] border border-white/[0.08] flex items-center justify-center mx-auto mb-4">
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/30">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                                <line x1="12" y1="13" x2="8" y2="13" />
+                                <line x1="16" y1="17" x2="8" y2="17" />
+                              </svg>
+                            </div>
+                            <p className="text-white/40 text-sm font-medium">No data available</p>
+                            <p className="text-white/30 text-xs mt-1">Configure scope to start tracking</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === 'alerts' && (
+                    <div className="h-full flex flex-col">
+                      <h3 className="text-sm font-semibold text-white mb-4">
+                        {config.alerts.length > 0 ? `${config.alerts.length} alert types configured` : 'Alert Monitoring'}
+                      </h3>
+                      {config.alerts.length > 0 ? (
+                        <div className="space-y-2">
+                          {config.alerts.map((alert, index) => (
+                            <div key={alert} className="p-4 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.04] transition-colors">
+                              <div className="flex items-center gap-3">
+                                <div className="w-2 h-2 rounded-full bg-green-400 shadow-lg shadow-green-400/40"></div>
+                                <div className="flex-1">
+                                  <p className="font-medium text-white text-sm">{alert}</p>
+                                  <p className="text-white/50 text-xs mt-0.5">Real-time monitoring active</p>
+                                </div>
+                                <span className="text-xs text-green-400 font-medium px-2 py-1 bg-green-400/10 rounded">Active</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="flex-1 flex items-center justify-center">
+                          <div className="text-center">
+                            <div className="w-16 h-16 rounded-full bg-white/[0.03] border border-white/[0.08] flex items-center justify-center mx-auto mb-4">
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/30">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                                <line x1="12" y1="9" x2="12" y2="13" />
+                                <line x1="12" y1="17" x2="12.01" y2="17" />
+                              </svg>
+                            </div>
+                            <p className="text-white/40 text-sm font-medium">No alerts configured</p>
+                            <p className="text-white/30 text-xs mt-1">Alerts were skipped during wizard setup</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === 'reports' && (
+                    <div className="h-full flex flex-col">
+                      <h3 className="text-sm font-semibold text-white mb-4">
+                        {config.deliverables.length > 0 ? `${config.deliverables.length} report types configured` : 'Report Generation'}
+                      </h3>
+                      {config.deliverables.length > 0 ? (
+                        <div className="space-y-2">
+                          {config.deliverables.map((d, index) => {
+                            const allItems = Object.values(deliverablesConfig).flatMap(cat => cat.items);
+                            const item = allItems.find(i => i.id === d.id);
+                            return (
+                              <div key={d.id} className="p-4 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.04] transition-colors">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={accentBg}>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                      <polyline points="14 2 14 8 20 8" />
+                                      <line x1="16" y1="13" x2="8" y2="13" />
+                                      <line x1="16" y1="17" x2="8" y2="17" />
+                                      <polyline points="10 9 9 9 8 9" />
+                                    </svg>
+                                  </div>
+                                  <div className="flex-1">
+                                    <p className="font-medium text-white text-sm">{item?.label || d.id}</p>
+                                    <p className="text-white/50 text-xs mt-0.5">Ready to generate • {d.id === 'on-demand' ? 'On-demand' : d.id === 'weekly' ? 'Weekly schedule' : d.id === 'monthly' ? 'Monthly schedule' : 'Automated'}</p>
+                                  </div>
+                                  <button className="text-xs font-medium px-4 py-2 rounded-lg text-white hover:opacity-90 transition-all" style={accentBg}>
+                                    Generate
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="flex-1 flex items-center justify-center">
+                          <div className="text-center">
+                            <div className="w-16 h-16 rounded-full bg-white/[0.03] border border-white/[0.08] flex items-center justify-center mx-auto mb-4">
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/30">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                              </svg>
+                            </div>
+                            <p className="text-white/40 text-sm font-medium">No reports configured</p>
+                            <p className="text-white/30 text-xs mt-1">Deliverables were skipped during wizard setup</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+            </div>
+
+            {/* Chat Panel (20%) */}
+            <div
+              className={`border-l border-white/10 flex flex-col flex-shrink-0 transition-all duration-300 ${chatCollapsed ? 'w-10' : ''}`}
+              style={{ width: chatCollapsed ? undefined : '20%', minWidth: chatCollapsed ? undefined : '280px' }}
+            >
+                <div className={`h-12 mt-3 px-4 flex items-center flex-shrink-0 ${chatCollapsed ? 'justify-center px-0' : 'justify-between'}`}>
+                  {!chatCollapsed && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-1 h-5 rounded-full" style={accentBg}></div>
+                      <span className="text-sm font-bold text-white uppercase tracking-wide">
+                        Chat
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1">
+                    <Tooltip label={chatCollapsed ? "Expand chat" : "Collapse chat"}>
+                      <button
+                        onClick={() => setChatCollapsed(!chatCollapsed)}
+                        className="h-7 w-7 flex items-center justify-center text-white hover:opacity-70"
+                      >
+                        <CollapsePanelRightIcon size={16} />
+                      </button>
+                    </Tooltip>
+                  </div>
+                </div>
+
+                {!chatCollapsed && (
+                  <>
+                    <div className="flex-1 overflow-auto px-4 py-3 space-y-4">
+                      {chatMessages.map((msg, idx) => (
+                        msg.type === 'user' ? (
+                          <div key={idx} className="flex flex-col items-end">
+                            <div className="bg-white/10 text-white rounded-lg px-3 py-2.5 text-xs">
+                              {msg.text}
+                            </div>
+                            <span className="text-white/30 mt-1.5 text-xs">{msg.timestamp}</span>
+                          </div>
+                        ) : (
+                          <div key={idx} className="flex flex-col">
+                            <p className="text-white text-xs leading-relaxed">
+                              {msg.text}
+                            </p>
+                            <span className="text-white/30 mt-1.5 text-xs">{msg.timestamp}</span>
+                          </div>
+                        )
+                      ))}
+                    </div>
+                    <div className="p-3 border-t border-white/10">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={chatInput}
+                          onChange={(e) => setChatInput(e.target.value)}
+                          placeholder="Ask a question..."
+                          className="flex-1 h-9 px-3 bg-white/[0.05] border border-white/[0.1] rounded-lg text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/20"
+                        />
+                        <button className="h-9 w-9 flex items-center justify-center text-white rounded-lg hover:opacity-90 transition-all" style={accentBg}>
+                          <Send size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+            </div>
+        </div>
+      );
+    }
+
+    // ============================================
+    // MAIN APP COMPONENT
+    // ============================================
+    function App() {
+      // Phase: 'wizard' | 'plan-preview' | 'stream'
+      const [phase, setPhase] = useState('wizard');
+      const [config, setConfig] = useState({
+        team: null,
+        workflow: null,
+        foundation: '',
+        scope: {}, // { blockId: { selected: true, values: ['value1', 'value2'] } }
+        entities: { firm: [], drug: [], trial: [] },
+        enrichment: [],
+        customEnrichment: {},
+        alerts: [],
+        customAlerts: [],
+        alertNotes: {},
+        deliverables: [],
+        deliverablesScope: '',
+        agentName: '',
+        foundationApproved: false,
+        enrichmentApproved: false,
+        alertsApproved: false,
+        reportsApproved: false
+      });
+
+      const handleWizardComplete = () => {
+        setPhase('plan-preview');
+      };
+
+      const handleExecute = () => {
+        setPhase('stream');
+      };
+
+      const handleEditPlan = () => {
+        // Go back to wizard with config preserved
+        setConfig(prev => ({ ...prev, reportsApproved: false }));
+        setPhase('wizard');
+      };
+
+      return (
+        <div className="h-screen flex flex-col" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
+          {/* Header */}
+          <header className="h-14 px-5 flex items-center justify-between flex-shrink-0 border-b border-white/10" style={darkBgPattern}>
+            <div className="flex items-center gap-4">
+              {/* Ferma Agents Logo */}
+              <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2" y="2" width="24" height="24" rx="6" fill="none" />
+                <g transform="translate(3, 4) scale(0.045)">
+                  <path d="M200 150 C165 125, 135 105, 110 90" stroke="#7B61FF" strokeWidth="58" strokeLinecap="round" fill="none" />
+                  <path d="M200 150 C198 200, 202 280, 200 340" stroke="#7B61FF" strokeWidth="58" strokeLinecap="round" fill="none" />
+                  <path d="M200 150 C250 148, 320 152, 380 150" stroke="#7B61FF" strokeWidth="58" strokeLinecap="round" fill="none" />
+                  <path d="M200 270 C230 268, 275 272, 310 270" stroke="#7B61FF" strokeWidth="58" strokeLinecap="round" fill="none" />
+                </g>
+              </svg>
+              <span className="font-semibold text-white text-base">Ferma Agents</span>
+              {phase !== 'wizard' && (
+                <>
+                  <div className="w-px h-4 bg-white/20"></div>
+                  <span className="font-semibold text-white" style={type.xl}>
+                    {config.agentName || 'Agent'}
+                  </span>
+                </>
+              )}
+              {phase === 'stream' && (
+                <>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-400">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-400"></div>
+                    <span>Complete</span>
+                  </div>
+                  <div className="flex items-center gap-4 text-xs text-white/50 ml-4">
+                    <div className="flex items-center gap-1.5">
+                      <span>Created by:</span>
+                      <span className="text-white/70 font-medium">John Smith</span>
+                    </div>
+                    <div className="w-px h-4 bg-white/10"></div>
+                    <div className="flex items-center gap-1.5">
+                      <span>Last refreshed:</span>
+                      <span className="text-white/70 font-medium">2 hours ago</span>
+                    </div>
+                  </div>
+                </>
+              )}
+              {phase === 'plan-preview' && (
+                <span className="text-xs text-white/40">
+                  Review Plan
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              {phase !== 'wizard' && (
+                <Tooltip label="Share">
+                  <button className="h-8 px-3 bg-white/10 border border-white/20 rounded-md font-medium text-white hover:bg-white/20" style={type.sm}>
+                    Share
+                  </button>
+                </Tooltip>
+              )}
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-medium" style={{ ...accentBg, ...type.xs }}>
+                U
+              </div>
+            </div>
+          </header>
+
+          {/* Main Content */}
+          <div className="flex-1 flex overflow-hidden">
+            {phase === 'wizard' && (
+              <div className="flex-1">
+                <Wizard
+                  config={config}
+                  setConfig={setConfig}
+                  onComplete={handleWizardComplete}
+                  minimized={false}
+                />
+              </div>
+            )}
+
+            {phase === 'plan-preview' && (
+              <>
+                {/* Minimized Wizard */}
+                <Wizard
+                  config={config}
+                  setConfig={setConfig}
+                  onComplete={handleWizardComplete}
+                  minimized={true}
+                />
+                {/* Plan Preview Panel */}
+                <div className="flex-1">
+                  <PlanPreview
+                    config={config}
+                    onExecute={handleExecute}
+                    onEditPlan={handleEditPlan}
+                  />
+                </div>
+              </>
+            )}
+
+            {phase === 'stream' && (
+              <StreamView config={config} />
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
