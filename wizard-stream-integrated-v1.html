@@ -9,7 +9,7 @@
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
-    body { margin: 0; padding: 0; overflow: hidden; }
+    body { margin: 0; padding: 0; overflow: hidden; background-color: #000; }
 
     /* Wizard styles */
     @keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
@@ -96,6 +96,27 @@
       </svg>
     );
 
+    const Search = ({ size = 16, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <circle cx="11" cy="11" r="8" />
+        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+      </svg>
+    );
+
+    const Clock = ({ size = 16, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+    );
+
+    const Plus = ({ size = 16, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <line x1="12" y1="5" x2="12" y2="19" />
+        <line x1="5" y1="12" x2="19" y2="12" />
+      </svg>
+    );
+
     // ============================================
     // DESIGN TOKENS
     // ============================================
@@ -129,15 +150,55 @@
     ];
 
     const enrichmentConfig = {
-      main: {
-        label: 'Main Categories',
+      science: {
+        label: 'Science',
         items: [
-          { id: 'key-insights', label: 'Key Insights', teams: ['BD', 'CI', 'Medical', 'Other'], workflows: ['market-landscape', 'catalyst-monitoring', 'trial-readout', 'custom'] },
-          { id: 'readouts', label: 'Readouts', teams: ['BD', 'CI', 'Medical', 'Other'], workflows: ['market-landscape', 'trial-readout', 'custom'] },
-          { id: 'deals', label: 'Deals', teams: ['BD', 'CI', 'Other'], workflows: ['market-landscape', 'catalyst-monitoring', 'custom'] },
+          { id: 'mechanism', label: 'Mechanism', teams: ['BD', 'CI', 'Medical', 'Other'], workflows: ['market-landscape', 'trial-readout', 'custom'] },
+          { id: 'efficacy', label: 'Efficacy', teams: ['BD', 'CI', 'Medical', 'Other'], workflows: ['market-landscape', 'trial-readout', 'custom'] },
+          { id: 'safety', label: 'Safety', teams: ['BD', 'CI', 'Medical', 'Other'], workflows: ['market-landscape', 'trial-readout', 'custom'] }
+        ]
+      },
+      development: {
+        label: 'Development',
+        items: [
+          { id: 'stage', label: 'Stage', teams: ['BD', 'CI', 'Medical', 'Other'], workflows: ['market-landscape', 'catalyst-monitoring', 'trial-readout', 'custom'] },
+          { id: 'trials', label: 'Trials', teams: ['BD', 'CI', 'Medical', 'Other'], workflows: ['market-landscape', 'trial-readout', 'custom'] },
+          { id: 'regulatory', label: 'Regulatory', teams: ['BD', 'CI', 'Medical', 'Other'], workflows: ['market-landscape', 'catalyst-monitoring', 'custom'] },
+          { id: 'ip', label: 'IP', teams: ['BD', 'CI', 'Other'], workflows: ['market-landscape', 'catalyst-monitoring', 'custom'] }
+        ]
+      },
+      commercial: {
+        label: 'Commercial',
+        items: [
+          { id: 'market', label: 'Market', teams: ['BD', 'CI', 'Other'], workflows: ['market-landscape', 'custom'] },
+          { id: 'competition', label: 'Competition', teams: ['BD', 'CI', 'Medical', 'Other'], workflows: ['market-landscape', 'catalyst-monitoring', 'custom'] },
+          { id: 'access', label: 'Access', teams: ['BD', 'CI', 'Other'], workflows: ['market-landscape', 'custom'] },
           { id: 'sales', label: 'Sales', teams: ['BD', 'CI', 'Other'], workflows: ['market-landscape', 'custom'] }
         ]
+      },
+      corporate: {
+        label: 'Corporate',
+        items: [
+          { id: 'guidance', label: 'Guidance', teams: ['BD', 'CI', 'Other'], workflows: ['market-landscape', 'catalyst-monitoring', 'custom'] },
+          { id: 'deals', label: 'Deals', teams: ['BD', 'CI', 'Other'], workflows: ['market-landscape', 'catalyst-monitoring', 'custom'] }
+        ]
       }
+    };
+
+    const enrichmentHints = {
+      'mechanism': 'e.g., differentiation vs. existing MOAs, target validation, modality advantages',
+      'efficacy': 'e.g., ORR thresholds, durability benchmarks, head-to-head comparisons',
+      'safety': 'e.g., specific AEs to flag, discontinuation rates, class effects',
+      'stage': 'e.g., Phase 2+ only, expected readout windows, go/no-go catalysts',
+      'trials': 'e.g., comparator requirements, endpoint preferences, population specifics',
+      'regulatory': 'e.g., breakthrough/fast track status, filing timelines, CRL history',
+      'ip': 'e.g., LOE dates by region, patent challenges, exclusivity type',
+      'market': 'e.g., TAM by region, peak sales projections 2025-2030, growth drivers',
+      'competition': 'e.g., head-to-head positioning, share of voice, pipeline threats',
+      'access': 'e.g., WAC vs. net, formulary wins/losses, ICER reviews',
+      'sales': 'e.g., quarterly trends, launch curve vs. comps, geographic mix',
+      'guidance': 'e.g., management comments on timelines, priority programs, outlook',
+      'deals': 'e.g., deal terms if disclosed, milestone structure, territory rights'
     };
 
     const workflowAlerts = {
@@ -234,6 +295,10 @@
       const [customInput, setCustomInput] = useState('');
       const [activeScopeBlock, setActiveScopeBlock] = useState(null);
       const [scopeInput, setScopeInput] = useState('');
+      const [scopeFilters, setScopeFilters] = useState({});
+      const [showFilterInput, setShowFilterInput] = useState(null);
+      const [filterInput, setFilterInput] = useState('');
+      const [customEnrichmentInput, setCustomEnrichmentInput] = useState('');
 
       const getStep = () => {
         if (!config.team) return 1;
@@ -392,6 +457,17 @@
         }));
       };
 
+      const saveFilter = (blockId) => {
+        if (filterInput.trim()) {
+          setScopeFilters(prev => ({
+            ...prev,
+            [blockId]: filterInput.trim()
+          }));
+        }
+        setFilterInput('');
+        setShowFilterInput(null);
+      };
+
       const handleScopeCsvUpload = (file) => {
         if (!file) return;
         const reader = new FileReader();
@@ -491,14 +567,72 @@
         }).join(', ');
       };
 
-      const toggleEnrichment = (itemId) => {
+      const toggleEnrichment = (itemId, isCustom = false) => {
         const exists = config.enrichment.some(e => e.id === itemId);
-        if (exists) {
-          setConfig(prev => ({ ...prev, enrichment: prev.enrichment.filter(e => e.id !== itemId) }));
+        const isSelected = isEnrichmentSelected(itemId);
+
+        if (isSelected) {
+          // If already selected, open note editor
+          setEditingNote({ type: 'enrichment', id: itemId });
+          setNoteInput(getEnrichmentNote(itemId));
         } else {
-          setConfig(prev => ({ ...prev, enrichment: [...prev.enrichment, { id: itemId }] }));
+          // Select and open note editor
+          setConfig(prev => ({ ...prev, enrichment: [...prev.enrichment, { id: itemId, isCustom }] }));
+          setEditingNote({ type: 'enrichment', id: itemId });
+          setNoteInput('');
         }
       };
+
+      const saveEnrichmentNote = (itemId) => {
+        setConfig(prev => ({
+          ...prev,
+          enrichment: prev.enrichment.map(e => e.id === itemId ? { ...e, note: noteInput.trim() } : e)
+        }));
+        setEditingNote(null);
+        setNoteInput('');
+      };
+
+      const clearEnrichmentNote = (itemId) => {
+        setConfig(prev => ({
+          ...prev,
+          enrichment: prev.enrichment.map(e => e.id === itemId ? { ...e, note: undefined } : e)
+        }));
+        setNoteInput('');
+      };
+
+      const removeEnrichmentItem = (itemId) => {
+        setConfig(prev => ({ ...prev, enrichment: prev.enrichment.filter(e => e.id !== itemId) }));
+        setEditingNote(null);
+        setNoteInput('');
+      };
+
+      const addCustomEnrichment = (categoryKey) => {
+        if (!customInput.trim()) return;
+        const customId = `custom-${categoryKey}-${Date.now()}`;
+        setConfig(prev => ({
+          ...prev,
+          customEnrichment: {
+            ...prev.customEnrichment,
+            [categoryKey]: [...(prev.customEnrichment[categoryKey] || []), { id: customId, label: customInput.trim() }]
+          },
+          enrichment: [...prev.enrichment, { id: customId, isCustom: true }]
+        }));
+        setCustomInput('');
+        setAddingCustom(null);
+      };
+
+      const removeCustomEnrichment = (categoryKey, customId) => {
+        setConfig(prev => ({
+          ...prev,
+          customEnrichment: {
+            ...prev.customEnrichment,
+            [categoryKey]: (prev.customEnrichment[categoryKey] || []).filter(c => c.id !== customId)
+          },
+          enrichment: prev.enrichment.filter(e => e.id !== customId)
+        }));
+      };
+
+      const getEnrichmentHint = (itemId) => enrichmentHints[itemId] || 'Specific requirements or filters';
 
       const toggleAlert = (item) => {
         if (config.alerts.includes(item)) {
@@ -631,137 +765,126 @@
                   <span className="w-7 h-7 bg-white/10 rounded-lg flex items-center justify-center text-xs font-semibold text-white">3</span>
                   <span className="text-sm font-semibold text-white">Define Scope</span>
                 </div>
-                <p className="text-xs text-white/50 mb-4">Select dimensions and add items to define what you're tracking.</p>
+                <p className="text-xs text-white/50 mb-4">Click filter icon on any dimension to add specific values.</p>
 
-                {/* Unified Scope Block - All entity types in one place */}
+                {/* Compact Scope Blocks - Preselected pills with filter icons */}
                 <div className="border border-white/[0.12] rounded-xl p-4 mb-3 bg-white/[0.03]">
-                  <div className="space-y-3">
+                  {/* Scope block buttons in a flex-wrap layout */}
+                  <div className="flex flex-wrap gap-2 mb-3">
                     {scopeBlocksConfig.map(block => {
-                      const isSelected = isScopeBlockSelected(block.id);
                       const values = getScopeBlockValues(block.id);
+                      const hasValues = values.length > 0;
+                      const isInputOpen = showFilterInput === block.id;
 
                       return (
-                        <div key={block.id} className="border border-white/[0.08] rounded-lg p-3 bg-white/[0.02]">
-                          {/* Entity Type Header with Checkbox */}
-                          <div className="flex items-center gap-2 mb-2">
-                            <button
-                              onClick={() => toggleScopeBlock(block.id)}
-                              className="flex items-center gap-2 flex-1">
-                              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                                isSelected ? 'border-white bg-white' : 'border-white/[0.15]'
-                              }`}>
-                                {isSelected && (
-                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                    <polyline points="20 6 9 17 4 12" />
-                                  </svg>
-                                )}
-                              </div>
-                              <span className={`text-xs font-medium ${isSelected ? 'text-white' : 'text-white/60'}`}>
-                                {block.label}
+                        <div key={block.id} className="relative">
+                          {/* Pill button with highlight style */}
+                          <button
+                            onClick={() => {
+                              if (isInputOpen) {
+                                setShowFilterInput(null);
+                                setScopeInput('');
+                              } else {
+                                setShowFilterInput(block.id);
+                                setScopeInput('');
+                              }
+                            }}
+                            className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium transition-all ${
+                              hasValues
+                                ? 'bg-[#7B61FF]/20 border border-[#7B61FF]/40 text-white'
+                                : 'bg-white/[0.08] border border-white/[0.15] text-white/90 hover:bg-white/[0.12]'
+                            }`}
+                          >
+                            <span>{block.label}</span>
+                            {hasValues && (
+                              <span className="bg-[#7B61FF] text-white text-xs px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                                {values.length}
                               </span>
-                            </button>
-                            <div className="flex items-center gap-1.5">
-                              {values.length > 0 && (
-                                <span className="text-xs px-1.5 py-0.5 rounded bg-white/[0.15] text-white/80 font-medium">
-                                  {values.length}
-                                </span>
-                              )}
-                              {isSelected && (
-                                <button
-                                  onClick={() => deselectScopeBlock(block.id)}
-                                  className="w-5 h-5 flex items-center justify-center rounded hover:bg-white/[0.1] text-white/40 hover:text-red-400 transition-all"
-                                  title="Clear all">
-                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <line x1="18" y1="6" x2="6" y2="18" />
-                                    <line x1="6" y1="6" x2="18" y2="18" />
-                                  </svg>
-                                </button>
-                              )}
-                            </div>
-                          </div>
+                            )}
+                            {/* Filter Icon */}
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={hasValues ? 'text-[#7B61FF]' : 'text-white/50'}>
+                              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                            </svg>
+                          </button>
 
-                          {/* Input area - shows when selected */}
-                          {isSelected && (
-                            <>
-                              {/* Tags display */}
+                          {/* Dynamic Input Popup - shows on filter click */}
+                          {isInputOpen && (
+                            <div className="absolute z-20 top-full left-0 mt-2 w-72 bg-[#1a1a1b] border border-white/[0.15] rounded-lg p-3 shadow-2xl">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-medium text-white">{block.label}</span>
+                                <button
+                                  onClick={() => { setShowFilterInput(null); setScopeInput(''); }}
+                                  className="text-white/40 hover:text-white text-sm">
+                                  ×
+                                </button>
+                              </div>
+
+                              {/* Existing values as removable tags */}
                               {values.length > 0 && (
-                                <div className="flex flex-wrap gap-1.5 mb-2">
+                                <div className="flex flex-wrap gap-1 mb-2 max-h-20 overflow-y-auto">
                                   {values.map((value, idx) => (
-                                    <span key={idx} className="inline-flex items-center gap-1.5 h-6 px-2 bg-white/[0.08] border border-white/[0.1] rounded text-xs text-white/90">
-                                      {value}
-                                      <button onClick={() => removeScopeValue(block.id, value)} className="text-white/40 hover:text-red-400 text-sm leading-none ml-0.5">×</button>
+                                    <span key={idx} className="inline-flex items-center gap-1 h-6 px-2 bg-[#7B61FF]/20 border border-[#7B61FF]/30 rounded text-xs text-white">
+                                      <span className="truncate max-w-[140px]">{value}</span>
+                                      <button onClick={() => removeScopeValue(block.id, value)} className="text-white/50 hover:text-red-400 text-sm leading-none">×</button>
                                     </span>
                                   ))}
                                 </div>
                               )}
 
                               {/* Input field */}
-                              <div className="flex gap-2">
-                                <input
-                                  type="text"
-                                  value={activeScopeBlock === block.id ? scopeInput : ''}
-                                  onFocus={() => setActiveScopeBlock(block.id)}
-                                  onChange={(e) => {
-                                    setActiveScopeBlock(block.id);
-                                    setScopeInput(e.target.value);
-                                  }}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && scopeInput.trim()) {
-                                      e.preventDefault();
-                                      addScopeValue(block.id);
-                                    }
-                                  }}
-                                  placeholder={block.placeholder}
-                                  className="flex-1 h-8 px-2.5 bg-white/[0.02] border border-white/[0.08] rounded-lg text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/20"
-                                />
-                                <button
-                                  onClick={() => {
-                                    setActiveScopeBlock(block.id);
+                              <input
+                                type="text"
+                                value={scopeInput}
+                                onChange={(e) => setScopeInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && scopeInput.trim()) {
+                                    e.preventDefault();
                                     addScopeValue(block.id);
-                                  }}
-                                  disabled={activeScopeBlock !== block.id || !scopeInput.trim()}
-                                  className="h-8 px-3 bg-white text-black rounded-lg text-xs font-medium hover:bg-white/90 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
-                                  Add
-                                </button>
-                              </div>
-                            </>
+                                    // Keep input open for adding more
+                                  } else if (e.key === 'Escape') {
+                                    setShowFilterInput(null);
+                                    setScopeInput('');
+                                  }
+                                }}
+                                placeholder={block.placeholder}
+                                className="w-full h-8 px-2.5 bg-white/[0.04] border border-white/[0.1] rounded-lg text-xs text-white placeholder-white/40 focus:outline-none focus:border-[#7B61FF]/50"
+                                autoFocus
+                              />
+                              <div className="text-xs text-white/40 mt-1.5">Press Enter to add, Esc to close</div>
+                            </div>
                           )}
                         </div>
                       );
                     })}
                   </div>
 
-                  {/* Common CSV Upload - works for all entity types */}
-                  <div className="border border-dashed border-white/[0.1] rounded-lg p-2.5 bg-white/[0.01] mt-3">
-                    <div className="flex items-center gap-2 text-xs text-white/40 mb-2">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  {/* CSV Upload - compact inline */}
+                  <div className="flex items-center gap-2 pt-2 border-t border-white/[0.08]">
+                    <span className="text-xs text-white/40">Bulk:</span>
+                    <label className="h-7 px-2.5 bg-white/[0.04] border border-white/[0.08] rounded text-xs text-white/60 cursor-pointer hover:bg-white/[0.08] hover:text-white transition-all flex items-center gap-1.5">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                         <polyline points="17 8 12 3 7 8" />
                         <line x1="12" y1="3" x2="12" y2="15" />
                       </svg>
-                      <span>Bulk upload - each column represents an entity type</span>
-                    </div>
-                    <div className="flex gap-2">
-                      <label className="flex-1 h-8 px-3 bg-white/[0.04] border border-white/[0.08] rounded-lg text-xs font-medium text-white/60 cursor-pointer hover:bg-white/[0.06] hover:text-white transition-all flex items-center justify-center gap-2">
-                        <span>Upload CSV</span>
-                        <input
-                          type="file"
-                          accept=".csv"
-                          className="hidden"
-                          onChange={(e) => handleScopeCsvUpload(e.target.files?.[0])}
-                        />
-                      </label>
-                      <button
-                        onClick={downloadScopeCsvTemplate}
-                        className="h-8 px-3 bg-white/[0.04] border border-white/[0.08] rounded-lg text-xs font-medium text-white/60 hover:bg-white/[0.06] hover:text-white transition-all flex items-center gap-1.5">
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                          <polyline points="7 10 12 15 17 10" />
-                          <line x1="12" y1="15" x2="12" y2="3" />
-                        </svg>
-                        <span>Template</span>
-                      </button>
-                    </div>
+                      <span>Upload CSV</span>
+                      <input
+                        type="file"
+                        accept=".csv"
+                        className="hidden"
+                        onChange={(e) => handleScopeCsvUpload(e.target.files?.[0])}
+                      />
+                    </label>
+                    <button
+                      onClick={downloadScopeCsvTemplate}
+                      className="h-7 px-2.5 bg-white/[0.04] border border-white/[0.08] rounded text-xs text-white/60 hover:bg-white/[0.08] hover:text-white transition-all flex items-center gap-1.5">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                      </svg>
+                      <span>Template</span>
+                    </button>
                   </div>
                 </div>
 
@@ -792,50 +915,164 @@
                   <span className="w-7 h-7 bg-white/10 rounded-lg flex items-center justify-center text-xs font-semibold text-white">4</span>
                   <span className="text-sm font-semibold text-white">Enrichment</span>
                 </div>
-                <p className="text-xs text-white/50 mb-4">Select data points to enrich your tracking.</p>
 
-                {/* Main enrichment checkboxes */}
-                <div className="space-y-2 mb-4">
-                  {enrichmentConfig.main.items.map(item => (
-                    <button
-                      key={item.id}
-                      onClick={() => toggleEnrichment(item.id)}
-                      className={`w-full flex items-center gap-2 p-2.5 rounded-lg text-left transition-all ${
-                        isEnrichmentSelected(item.id)
-                          ? 'bg-white/[0.08] border border-white/[0.15]'
-                          : 'bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.1]'
-                      }`}>
-                      <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                        isEnrichmentSelected(item.id)
-                          ? 'border-white bg-white'
-                          : 'border-white/[0.15]'
-                      }`}>
-                        {isEnrichmentSelected(item.id) && (
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
+                {/* Enrichment categories with pills */}
+                {getEnrichmentCategories().map(category => {
+                  const categoryItems = [...category.items, ...(config.customEnrichment[category.key] || [])];
+                  const editingInCategory = editingNote?.type === 'enrichment' && categoryItems.some(i => i.id === editingNote.id);
+                  const editingItem = editingInCategory ? categoryItems.find(i => i.id === editingNote.id) : null;
+
+                  return (
+                    <div key={category.key} className="mb-5 last:mb-0">
+                      <div className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">{category.label}</div>
+                      <div className="flex flex-wrap gap-2">
+                        {/* Standard items */}
+                        {category.items.map(item => {
+                          const isSelected = isEnrichmentSelected(item.id);
+                          const hasNote = !!getEnrichmentNote(item.id);
+                          return (
+                            <button
+                              key={item.id}
+                              onClick={() => toggleEnrichment(item.id)}
+                              className={`h-8 px-3 rounded-lg text-xs font-medium transition-all flex items-center gap-2 ${
+                                isSelected && hasNote
+                                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 border border-blue-500 text-white'
+                                  : isSelected
+                                    ? 'bg-white border border-white text-black'
+                                    : hasNote
+                                      ? 'bg-blue-500/10 border border-blue-500/25 text-blue-300 hover:bg-blue-500/15'
+                                      : 'bg-white/[0.04] border border-white/[0.06] text-white/60 hover:bg-white/[0.08] hover:text-white'
+                              }`}
+                            >
+                              {item.label}
+                              {hasNote && (
+                                <span className={`text-xs px-1.5 py-0.5 rounded text-xs font-semibold uppercase tracking-wide ${
+                                  isSelected ? 'bg-white/20 text-white' : 'bg-blue-500/20 text-blue-400'
+                                }`}>Spec</span>
+                              )}
+                              {isSelected && (
+                                <span className={`w-5 h-5 rounded flex items-center justify-center text-xs ${
+                                  hasNote ? 'bg-white/20' : 'bg-black/10'
+                                }`}>✎</span>
+                              )}
+                            </button>
+                          );
+                        })}
+
+                        {/* Custom items for this category */}
+                        {(config.customEnrichment[category.key] || []).map(custom => {
+                          const isSelected = isEnrichmentSelected(custom.id);
+                          const hasNote = !!getEnrichmentNote(custom.id);
+                          return (
+                            <button
+                              key={custom.id}
+                              onClick={() => toggleEnrichment(custom.id, true)}
+                              className={`h-8 px-3 rounded-lg text-xs font-medium transition-all flex items-center gap-2 border-dashed ${
+                                isSelected && hasNote
+                                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 border border-solid border-blue-500 text-white'
+                                  : isSelected
+                                    ? 'bg-white border border-solid border-white text-black'
+                                    : 'bg-white/[0.04] border border-white/[0.15] text-white/60 hover:bg-white/[0.08]'
+                              }`}
+                            >
+                              {custom.label}
+                              {hasNote && (
+                                <span className={`text-xs px-1.5 py-0.5 rounded font-semibold uppercase ${
+                                  isSelected ? 'bg-white/20 text-white' : 'bg-blue-500/20 text-blue-400'
+                                }`}>Spec</span>
+                              )}
+                              {isSelected && <span className="w-5 h-5 rounded flex items-center justify-center text-xs bg-black/10">✎</span>}
+                              <span
+                                onClick={(e) => { e.stopPropagation(); removeCustomEnrichment(category.key, custom.id); }}
+                                className="text-white/40 hover:text-red-400 ml-1"
+                              >×</span>
+                            </button>
+                          );
+                        })}
+
+                        {/* Add custom button or inline input */}
+                        {addingCustom === category.key ? (
+                          <div className="flex gap-2 items-center">
+                            <input
+                              type="text"
+                              value={customInput}
+                              onChange={(e) => setCustomInput(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && customInput.trim()) {
+                                  addCustomEnrichment(category.key);
+                                } else if (e.key === 'Escape') {
+                                  setAddingCustom(null);
+                                  setCustomInput('');
+                                }
+                              }}
+                              placeholder="Custom data point…"
+                              className="h-8 px-3 bg-white/[0.04] border border-white/[0.15] rounded-lg text-xs text-white placeholder-white/40 focus:outline-none focus:border-white/30 min-w-[140px]"
+                              autoFocus
+                            />
+                            <button
+                              onClick={() => addCustomEnrichment(category.key)}
+                              className="h-8 px-3 bg-white text-black rounded-lg text-xs font-medium hover:bg-white/90"
+                            >Add</button>
+                            <button
+                              onClick={() => { setAddingCustom(null); setCustomInput(''); }}
+                              className="h-8 px-3 bg-white/[0.08] text-white/60 rounded-lg text-xs font-medium hover:bg-white/[0.12]"
+                            >Cancel</button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setAddingCustom(category.key)}
+                            className="h-8 px-3 bg-transparent border border-dashed border-white/[0.15] rounded-lg text-xs font-medium text-white/50 hover:bg-white/[0.04] hover:text-white/70 hover:border-white/25"
+                          >+ Custom</button>
                         )}
                       </div>
-                      <span className={`text-xs font-medium ${isEnrichmentSelected(item.id) ? 'text-white' : 'text-white/60'}`}>
-                        {item.label}
-                      </span>
-                    </button>
-                  ))}
-                </div>
 
-                {/* Custom enrichment text input */}
-                <div className="border border-white/[0.08] rounded-xl p-3 bg-white/[0.02]">
-                  <label className="text-xs font-medium text-white/70 block mb-2">Custom Requirements (Optional)</label>
-                  <textarea
-                    value={config.customEnrichmentText || ''}
-                    onChange={(e) => setConfig(prev => ({ ...prev, customEnrichmentText: e.target.value }))}
-                    placeholder="Describe any additional data points you need tracked..."
-                    className="w-full h-20 px-3 py-2 bg-white/[0.02] border border-white/[0.08] rounded-lg text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/20 resize-none"
-                  />
-                </div>
+                      {/* Note editor for this category */}
+                      {editingInCategory && editingItem && (
+                        <div className="mt-3 p-4 bg-blue-500/5 border border-blue-500/15 rounded-lg">
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-xs font-semibold text-blue-300">Specify: {editingItem.label}</span>
+                            <button
+                              onClick={() => { setEditingNote(null); setNoteInput(''); }}
+                              className="text-white/40 hover:text-white text-lg leading-none"
+                            >×</button>
+                          </div>
+                          <textarea
+                            value={noteInput}
+                            onChange={(e) => setNoteInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && e.ctrlKey) {
+                                saveEnrichmentNote(editingNote.id);
+                              } else if (e.key === 'Escape') {
+                                setEditingNote(null);
+                                setNoteInput('');
+                              }
+                            }}
+                            placeholder={getEnrichmentHint(editingNote.id)}
+                            className="w-full h-20 px-3 py-2 bg-white/[0.02] border border-white/[0.08] rounded-lg text-xs text-white placeholder-white/40 focus:outline-none focus:border-blue-500/30 resize-none mb-3"
+                            autoFocus
+                          />
+                          <div className="flex gap-2 justify-end">
+                            <button
+                              onClick={() => clearEnrichmentNote(editingNote.id)}
+                              className="h-8 px-3 bg-white/[0.08] border border-white/[0.1] rounded-lg text-xs font-medium text-white/60 hover:bg-white/[0.12]"
+                            >Clear</button>
+                            <button
+                              onClick={() => removeEnrichmentItem(editingNote.id)}
+                              className="h-8 px-3 bg-white/[0.08] border border-white/[0.1] rounded-lg text-xs font-medium text-white/60 hover:bg-white/[0.12]"
+                            >Remove</button>
+                            <button
+                              onClick={() => saveEnrichmentNote(editingNote.id)}
+                              className="h-8 px-3 bg-white text-black rounded-lg text-xs font-medium hover:bg-white/90"
+                            >Save</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
 
                 <button onClick={() => setConfig(prev => ({ ...prev, enrichmentApproved: true }))}
-                  disabled={config.enrichment.length === 0 && !config.customEnrichmentText?.trim()}
+                  disabled={config.enrichment.length === 0}
                   className="w-full h-11 mt-4 bg-white text-black rounded-lg text-sm font-medium hover:bg-white/90 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
                   Continue
                 </button>
@@ -1159,12 +1396,93 @@
     // STREAM VIEW (Full execution view)
     // ============================================
     function StreamView({ config }) {
+      const [isLoading, setIsLoading] = useState(true);
+      const [executingSection, setExecutingSection] = useState(0); // Which section is currently executing
+      const [executingStep, setExecutingStep] = useState(0); // Which step within section
+      const [completedSections, setCompletedSections] = useState([]); // Array of completed section indices
+      const [completedSteps, setCompletedSteps] = useState({}); // { sectionIndex: [stepIndices] }
       const [activeTab, setActiveTab] = useState('data');
       const [chatInput, setChatInput] = useState('');
       const [planCollapsed, setPlanCollapsed] = useState(false);
       const [chatCollapsed, setChatCollapsed] = useState(false);
-      const [expandedSection, setExpandedSection] = useState(1);
-      const [executionStatus, setExecutionStatus] = useState('complete'); // 'executing' or 'complete'
+      const [expandedSection, setExpandedSection] = useState(0); // Start with first section expanded
+      const [executionStatus, setExecutionStatus] = useState('executing'); // 'executing' or 'complete'
+
+      // Loading messages for center panel
+      const loadingMessages = [
+        { text: 'Initializing agent...', subtext: 'Configuring data pipelines' },
+        { text: 'Scanning data sources...', subtext: 'Connecting to 47 databases' },
+        { text: 'Processing entities...', subtext: 'Analyzing scope parameters' },
+        { text: 'Enriching data points...', subtext: 'Cross-referencing signals' },
+        { text: 'Generating insights...', subtext: 'Applying ML models' },
+        { text: 'Finalizing report...', subtext: 'Compiling results' }
+      ];
+      const [loadingMessage, setLoadingMessage] = useState(0);
+
+      // Execution progress effect - simulates step-by-step execution
+      useEffect(() => {
+        if (!isLoading) return;
+
+        // Cycle loading messages
+        const messageInterval = setInterval(() => {
+          setLoadingMessage(prev => (prev + 1) % loadingMessages.length);
+        }, 800);
+
+        // Total execution time: 5 seconds
+        // We'll execute through sections/steps progressively
+        const totalTime = 5000;
+        const sectionsCount = 4; // Objective, Data, Alerts, Reports
+        const timePerSection = totalTime / sectionsCount;
+
+        let currentSection = 0;
+        let currentStep = 0;
+
+        const progressInterval = setInterval(() => {
+          // Get steps count for current section (we'll use planSections once it's available)
+          const stepsInSection = currentSection === 0 ? 1 :
+                                 currentSection === 1 ? Math.max(1, Object.keys(config.scope).length + config.enrichment.length) :
+                                 currentSection === 2 ? Math.max(1, config.alerts.length) :
+                                 Math.max(1, config.deliverables.length);
+
+          // Mark current step as completed
+          setCompletedSteps(prev => ({
+            ...prev,
+            [currentSection]: [...(prev[currentSection] || []), currentStep]
+          }));
+
+          currentStep++;
+
+          // If we've completed all steps in this section
+          if (currentStep >= stepsInSection) {
+            setCompletedSections(prev => [...prev, currentSection]);
+            currentSection++;
+            currentStep = 0;
+            setExecutingSection(currentSection);
+            setExpandedSection(currentSection);
+          }
+
+          setExecutingStep(currentStep);
+
+          // If all sections complete
+          if (currentSection >= sectionsCount) {
+            clearInterval(progressInterval);
+          }
+        }, timePerSection / 3); // Execute ~3 steps per section time
+
+        // Complete loading after 5 seconds
+        const completeTimer = setTimeout(() => {
+          setIsLoading(false);
+          setExecutionStatus('complete');
+          setCompletedSections([0, 1, 2, 3]);
+          setExpandedSection(1); // Expand Data section
+        }, totalTime);
+
+        return () => {
+          clearInterval(messageInterval);
+          clearInterval(progressInterval);
+          clearTimeout(completeTimer);
+        };
+      }, [isLoading]);
 
       // Sample chat messages
       const [chatMessages] = useState([
@@ -1268,6 +1586,23 @@
 
       const tableData = generateTableData();
 
+      // Helper to check step status
+      const isStepCompleted = (sectionIndex, stepIndex) => {
+        return completedSteps[sectionIndex]?.includes(stepIndex) || completedSections.includes(sectionIndex);
+      };
+
+      const isStepExecuting = (sectionIndex, stepIndex) => {
+        return isLoading && executingSection === sectionIndex && executingStep === stepIndex && !isStepCompleted(sectionIndex, stepIndex);
+      };
+
+      const isSectionCompleted = (sectionIndex) => {
+        return completedSections.includes(sectionIndex);
+      };
+
+      const isSectionExecuting = (sectionIndex) => {
+        return isLoading && executingSection === sectionIndex && !isSectionCompleted(sectionIndex);
+      };
+
       return (
         <div className="h-full flex overflow-hidden" style={darkBgPattern}>
           {/* Left Sidebar - Plan (20%) */}
@@ -1317,6 +1652,8 @@
                   const isExpanded = isObjective || expandedSection === sectionIndex;
                   const emptyMessages = ['No alerts configured', 'No reports configured', 'No data collection configured'];
                   const hasContent = section.steps.length > 0 && !emptyMessages.includes(section.steps[0].title);
+                  const sectionCompleted = isSectionCompleted(sectionIndex);
+                  const sectionExecuting = isSectionExecuting(sectionIndex);
 
                   return (
                     <div key={sectionIndex} className="mb-3">
@@ -1336,12 +1673,24 @@
                         {!isObjective && (
                           <ChevronRight size={12} className={`text-white/40 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                         )}
-                        <span className="text-xs text-white/40 uppercase tracking-wider font-medium">{section.title}</span>
+                        {/* Section status indicator */}
+                        {sectionCompleted ? (
+                          <div className="w-4 h-4 rounded-full flex items-center justify-center bg-green-500">
+                            <Check size={10} className="text-white" strokeWidth={3} />
+                          </div>
+                        ) : sectionExecuting ? (
+                          <div className="w-4 h-4 rounded-full border-2 border-[#7B61FF] border-t-transparent animate-spin"></div>
+                        ) : (
+                          <div className="w-4 h-4 rounded-full border-2 border-white/20"></div>
+                        )}
+                        <span className={`text-xs uppercase tracking-wider font-medium ${
+                          sectionCompleted ? 'text-green-400' : sectionExecuting ? 'text-[#7B61FF]' : 'text-white/40'
+                        }`}>{section.title}</span>
                         <div className="flex-1 h-px bg-white/10"></div>
                         {!isObjective && hasContent && (
                           <span className="text-xs text-white/30 mr-1">{section.steps.length}</span>
                         )}
-                        {sectionIndex > 0 && isExpanded && hasContent && (
+                        {sectionIndex > 0 && isExpanded && hasContent && !isLoading && (
                           <Tooltip label={`Execute ${section.title}`}>
                             <button
                               className="w-5 h-5 rounded flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-colors"
@@ -1353,30 +1702,44 @@
                         )}
                       </div>
 
-                      {isExpanded && section.steps.map((step, stepIndex) => (
-                        <div key={stepIndex} className="flex gap-3 ml-1">
-                          {sectionIndex > 0 && hasContent && (
-                            <div className="flex flex-col items-center">
-                              <div className="flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center" style={accentBg}>
-                                <Check size={9} className="text-white" strokeWidth={3} />
+                      {isExpanded && section.steps.map((step, stepIndex) => {
+                        const stepCompleted = isStepCompleted(sectionIndex, stepIndex);
+                        const stepExecuting = isStepExecuting(sectionIndex, stepIndex);
+
+                        return (
+                          <div key={stepIndex} className="flex gap-3 ml-1">
+                            {sectionIndex > 0 && hasContent && (
+                              <div className="flex flex-col items-center">
+                                {/* Step status indicator */}
+                                {stepCompleted ? (
+                                  <div className="flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center" style={accentBg}>
+                                    <Check size={9} className="text-white" strokeWidth={3} />
+                                  </div>
+                                ) : stepExecuting ? (
+                                  <div className="flex-shrink-0 w-4 h-4 rounded-full border-2 border-[#7B61FF] border-t-transparent animate-spin"></div>
+                                ) : (
+                                  <div className="flex-shrink-0 w-4 h-4 rounded-full border-2 border-white/20 flex items-center justify-center">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-white/30"></div>
+                                  </div>
+                                )}
+                                {stepIndex < section.steps.length - 1 && (
+                                  <div className={`w-0.5 flex-1 my-1 ${stepCompleted ? 'bg-[#7B61FF]/50' : 'bg-white/10'}`}></div>
+                                )}
                               </div>
-                              {stepIndex < section.steps.length - 1 && (
-                                <div className="w-0.5 flex-1 my-1" style={{ backgroundColor: 'rgba(123, 97, 255, 0.3)' }}></div>
+                            )}
+                            <div className="pb-3">
+                              {step.description ? (
+                                <>
+                                  <h4 className={`font-medium mb-0.5 ${stepCompleted ? 'text-white' : stepExecuting ? 'text-[#7B61FF]' : 'text-white/60'}`} style={type.xs}>{step.title}</h4>
+                                  <p className="text-white/50" style={{ fontSize: '11px', lineHeight: '15px' }}>{step.description}</p>
+                                </>
+                              ) : (
+                                <p className={`${stepCompleted ? 'text-white/80' : stepExecuting ? 'text-[#7B61FF]' : 'text-white/50'}`} style={{ fontSize: '11px', lineHeight: '15px' }}>{step.title}</p>
                               )}
                             </div>
-                          )}
-                          <div className="pb-3">
-                            {step.description ? (
-                              <>
-                                <h4 className="font-medium text-white mb-0.5" style={type.xs}>{step.title}</h4>
-                                <p className="text-white/50" style={{ fontSize: '11px', lineHeight: '15px' }}>{step.description}</p>
-                              </>
-                            ) : (
-                              <p className="text-white/80" style={{ fontSize: '11px', lineHeight: '15px' }}>{step.title}</p>
-                            )}
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   );
                 })}
@@ -1384,64 +1747,143 @@
             )}
           </aside>
 
-          {/* Main Content Area - Data Section (60%) */}
-          <div className="flex-1 flex flex-col overflow-hidden" style={{ width: '60%', minWidth: '500px' }}>
-            {/* Data Section Header - Same level as Plan/Chat */}
-            <div className="flex-shrink-0 border-b border-white/10">
-              <div className="h-12 mt-3 px-6 flex items-center">
-                <div className="flex items-center gap-2">
-                  <div className="w-1 h-5 rounded-full" style={accentBg}></div>
-                  <span className="text-sm font-bold text-white uppercase tracking-wide">
-                    Data
-                  </span>
+          {/* Main Content Area - Output Section (60%) */}
+          <div className={`flex-1 flex flex-col overflow-hidden ${!isLoading ? 'bg-white' : ''}`} style={{ width: '60%', minWidth: '500px' }}>
+            {/* Loading state - Center Panel Animation */}
+            {isLoading ? (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-6">
+                  {/* Animated spinner */}
+                  <div className="relative">
+                    {/* Outer rotating ring */}
+                    <div className="w-20 h-20 rounded-full border-4 border-white/10 border-t-[#7B61FF] animate-spin" style={{ animationDuration: '1s' }}></div>
+                    {/* Inner pulsing circle */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-full bg-[#7B61FF]/20 animate-pulse flex items-center justify-center">
+                        <div className="w-5 h-5 rounded-full bg-[#7B61FF]"></div>
+                      </div>
+                    </div>
+                    {/* Orbiting dots */}
+                    <div className="absolute inset-0 animate-spin" style={{ animationDuration: '3s' }}>
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 w-2 h-2 rounded-full bg-[#7B61FF]"></div>
+                    </div>
+                    <div className="absolute inset-0 animate-spin" style={{ animationDuration: '3s', animationDelay: '-1s' }}>
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 w-1.5 h-1.5 rounded-full bg-[#7B61FF]/60"></div>
+                    </div>
+                    <div className="absolute inset-0 animate-spin" style={{ animationDuration: '3s', animationDelay: '-2s' }}>
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 w-1 h-1 rounded-full bg-[#7B61FF]/40"></div>
+                    </div>
+                  </div>
+
+                  {/* Loading text */}
+                  <div className="text-center">
+                    <h2 className="text-lg font-semibold text-white mb-1 transition-all duration-300">
+                      {loadingMessages[loadingMessage].text}
+                    </h2>
+                    <p className="text-sm text-white/50 transition-all duration-300">
+                      {loadingMessages[loadingMessage].subtext}
+                    </p>
+                  </div>
+
+                  {/* Progress bar */}
+                  <div className="w-56 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-[#7B61FF] to-[#9D8AFF] rounded-full transition-all duration-500"
+                      style={{ width: `${((completedSections.length) / 4) * 100}%` }}
+                    ></div>
+                  </div>
+
+                  {/* Agent info */}
+                  <div className="flex items-center gap-3 px-4 py-2 bg-white/5 rounded-lg border border-white/10">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={accentBg}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                        <path d="M2 17l10 5 10-5" />
+                        <path d="M2 12l10 5 10-5" />
+                      </svg>
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-white">{config.agentName || 'New Agent'}</div>
+                      <div className="text-xs text-white/40">Generating report...</div>
+                    </div>
+                  </div>
                 </div>
               </div>
-              {/* Tabs - Spreadsheet style */}
-              <div className="px-6 flex items-end gap-0.5">
-                {['Exec Summary', 'Raw Data', 'Alerts', 'Reports'].map((tab) => {
-                  const tabKey = tab === 'Exec Summary' ? 'exec' : tab === 'Raw Data' ? 'data' : tab.toLowerCase();
-                  const isActive = activeTab === tabKey;
-                  return (
-                    <button
-                      key={tab}
-                      onClick={() => setActiveTab(tabKey)}
-                      className={`px-4 py-2 text-xs font-medium transition-all relative ${
-                        isActive
-                          ? 'text-white bg-white/[0.08]'
-                          : 'text-white/50 hover:text-white/70 hover:bg-white/[0.03]'
-                      }`}
-                      style={{
-                        borderTopLeftRadius: '6px',
-                        borderTopRightRadius: '6px',
-                        borderBottom: isActive ? '2px solid rgba(123, 97, 255, 1)' : '2px solid transparent'
-                      }}
-                    >
-                      {tab}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            ) : (
+              <>
+                {/* Output Section Header - Same level as Plan/Chat */}
+                <div className="flex-shrink-0 border-b border-gray-200">
+                  <div className="h-12 mt-3 px-6 flex items-center">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1 h-5 rounded-full" style={accentBg}></div>
+                      <span className="text-sm font-bold text-gray-900 uppercase tracking-wide">
+                        Output
+                      </span>
+                    </div>
+                  </div>
+                  {/* Tabs - Spreadsheet style */}
+                  <div className="px-6 flex items-center justify-between">
+                    <div className="flex items-end gap-0.5">
+                      {['Exec Summary', 'Data', 'Alerts', 'Reports'].map((tab) => {
+                        const tabKey = tab === 'Exec Summary' ? 'exec' : tab === 'Data' ? 'data' : tab.toLowerCase();
+                        const isActive = activeTab === tabKey;
+                        return (
+                          <button
+                            key={tab}
+                            onClick={() => setActiveTab(tabKey)}
+                            className={`px-4 py-2 text-xs font-medium transition-all relative ${
+                              isActive
+                                ? 'text-gray-900 bg-gray-100'
+                                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                            }`}
+                            style={{
+                              borderTopLeftRadius: '6px',
+                              borderTopRightRadius: '6px',
+                              borderBottom: isActive ? '2px solid rgba(123, 97, 255, 1)' : '2px solid transparent'
+                            }}
+                          >
+                            {tab}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="relative">
+                        <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <input
+                          type="text"
+                          placeholder="Search..."
+                          className="h-7 pl-8 pr-3 w-40 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-300"
+                        />
+                      </div>
+                      <Tooltip label="Download">
+                        <button className="h-7 w-7 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                          <Download size={15} />
+                        </button>
+                      </Tooltip>
+                    </div>
+                  </div>
+                </div>
 
-            {/* Data Content */}
-            <div className="flex-1 overflow-auto px-6 py-4">
+                {/* Data Content */}
+                <div className="flex-1 overflow-auto px-6 py-4">
                   {activeTab === 'exec' && (
                     <div className="h-full flex flex-col">
                       <div className="mb-6">
-                        <h3 className="text-sm font-semibold text-white mb-2">Executive Summary</h3>
-                        <p className="text-white/50 text-xs">
+                        <h3 className="text-sm font-semibold text-gray-900 mb-2">Executive Summary</h3>
+                        <p className="text-gray-500 text-xs">
                           {config.team} • {allWorkflows.find(w => w.id === config.workflow)?.name} • {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                         </p>
                       </div>
 
                       {/* Key Insights */}
                       {tableData.length > 0 && (
-                        <div className="mb-6 p-5 rounded-xl border-2 border-green-500/30 bg-green-500/10">
-                          <p className="text-green-400 font-semibold mb-2 text-xs uppercase tracking-wider">Key Insight</p>
-                          <p className="text-white text-sm font-medium mb-2">
+                        <div className="mb-6 p-5 rounded-xl border-2 border-green-500/30 bg-green-50">
+                          <p className="text-green-600 font-semibold mb-2 text-xs uppercase tracking-wider">Key Insight</p>
+                          <p className="text-gray-900 text-sm font-medium mb-2">
                             {tableData.filter(d => d.dealLikelihood === 'High').length} high-priority targets identified
                           </p>
-                          <p className="text-white/70 text-xs leading-relaxed">
+                          <p className="text-gray-600 text-xs leading-relaxed">
                             Based on analysis of {tableData.length} items across {Object.keys(config.scope).filter(k => config.scope[k].selected).length} dimensions,
                             focusing on opportunities with {config.enrichment.length} enrichment criteria applied.
                           </p>
@@ -1450,47 +1892,47 @@
 
                       {/* Summary Cards */}
                       <div className="grid grid-cols-3 gap-4 mb-6">
-                        <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08]">
-                          <p className="text-white/50 text-xs mb-1">Tracked Items</p>
-                          <p className="text-white font-bold text-2xl mb-1">{tableData.length}</p>
-                          <p className="text-white/40 text-xs">Active monitoring</p>
+                        <div className="p-4 rounded-xl bg-gray-50 border border-gray-200">
+                          <p className="text-gray-500 text-xs mb-1">Tracked Items</p>
+                          <p className="text-gray-900 font-bold text-2xl mb-1">{tableData.length}</p>
+                          <p className="text-gray-400 text-xs">Active monitoring</p>
                         </div>
-                        <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08]">
-                          <p className="text-white/50 text-xs mb-1">Enrichment Data</p>
-                          <p className="text-white font-bold text-2xl mb-1">{config.enrichment.length}</p>
-                          <p className="text-white/40 text-xs">Data fields tracked</p>
+                        <div className="p-4 rounded-xl bg-gray-50 border border-gray-200">
+                          <p className="text-gray-500 text-xs mb-1">Enrichment Data</p>
+                          <p className="text-gray-900 font-bold text-2xl mb-1">{config.enrichment.length}</p>
+                          <p className="text-gray-400 text-xs">Data fields tracked</p>
                         </div>
-                        <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08]">
-                          <p className="text-white/50 text-xs mb-1">Alerts</p>
-                          <p className="text-white font-bold text-2xl mb-1">{config.alerts.length}</p>
-                          <p className="text-white/40 text-xs">Event monitoring</p>
+                        <div className="p-4 rounded-xl bg-gray-50 border border-gray-200">
+                          <p className="text-gray-500 text-xs mb-1">Alerts</p>
+                          <p className="text-gray-900 font-bold text-2xl mb-1">{config.alerts.length}</p>
+                          <p className="text-gray-400 text-xs">Event monitoring</p>
                         </div>
                       </div>
 
                       {/* Objective */}
                       <div className="mb-4">
-                        <p className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-3">Objective</p>
-                        <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08]">
-                          <p className="text-white/80 text-sm leading-relaxed">{generateObjectiveDescription(config)}</p>
+                        <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-3">Objective</p>
+                        <div className="p-4 rounded-xl bg-gray-50 border border-gray-200">
+                          <p className="text-gray-700 text-sm leading-relaxed">{generateObjectiveDescription(config)}</p>
                         </div>
                       </div>
 
                       {/* Scope Summary */}
                       <div>
-                        <p className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-3">Tracking Scope</p>
-                        <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08]">
+                        <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-3">Tracking Scope</p>
+                        <div className="p-4 rounded-xl bg-gray-50 border border-gray-200">
                           <div className="space-y-3">
                             {Object.entries(config.scope).filter(([_, v]) => v.selected && v.values?.length > 0).map(([id, data]) => {
                               const block = scopeBlocksConfig.find(b => b.id === id);
                               return (
                                 <div key={id} className="flex items-start gap-3">
-                                  <span className="text-white/50 text-xs font-medium min-w-20">{block?.label}:</span>
+                                  <span className="text-gray-500 text-xs font-medium min-w-20">{block?.label}:</span>
                                   <div className="flex flex-wrap gap-1.5">
                                     {data.values.slice(0, 4).map((val, idx) => (
-                                      <span key={idx} className="text-xs px-2.5 py-1 bg-white/[0.06] border border-white/[0.08] rounded text-white/80">{val}</span>
+                                      <span key={idx} className="text-xs px-2.5 py-1 bg-gray-100 border border-gray-200 rounded text-gray-700">{val}</span>
                                     ))}
                                     {data.values.length > 4 && (
-                                      <span className="text-xs px-2.5 py-1 text-white/50">+{data.values.length - 4} more</span>
+                                      <span className="text-xs px-2.5 py-1 text-gray-500">+{data.values.length - 4} more</span>
                                     )}
                                   </div>
                                 </div>
@@ -1504,52 +1946,52 @@
 
                   {activeTab === 'data' && (
                     <div className="h-full flex flex-col">
-                      <h2 className="font-semibold text-white mb-5 text-sm">{tableData.length} items tracked — {tableData.filter(d => d.dealLikelihood === 'High').length} meet all criteria</h2>
+                      <h2 className="font-semibold text-gray-900 mb-5 text-sm">{tableData.length} items tracked — {tableData.filter(d => d.dealLikelihood === 'High').length} meet all criteria</h2>
                       {tableData.length > 0 ? (
                         <div className="flex-1 overflow-auto -mx-6 px-6">
                           <table className="w-full text-xs border-collapse">
-                            <thead className="sticky top-0" style={{ backgroundColor: '#000', backgroundImage: 'radial-gradient(rgba(123, 97, 255, 0.15) 1px, transparent 1px)', backgroundSize: '16px 16px' }}>
-                              <tr className="border-b-2 border-white/[0.1]">
-                                <th className="text-left py-2.5 px-3 font-semibold text-white/60">Company</th>
-                                <th className="text-left py-2.5 px-3 font-semibold text-white/60">Drug</th>
-                                <th className="text-left py-2.5 px-3 font-semibold text-white/60">Target</th>
-                                <th className="text-left py-2.5 px-3 font-semibold text-white/60">Phase</th>
-                                <th className="text-left py-2.5 px-3 font-semibold text-white/60">Efficacy vs SOC</th>
-                                <th className="text-left py-2.5 px-3 font-semibold text-white/60">Rights</th>
-                                <th className="text-left py-2.5 px-3 font-semibold text-white/60">Cash Runway</th>
-                                <th className="text-left py-2.5 px-3 font-semibold text-white/60">Deal Likelihood</th>
+                            <thead className="sticky top-0 bg-gray-50">
+                              <tr className="border-b-2 border-gray-200">
+                                <th className="text-left py-2.5 px-3 font-semibold text-gray-600">Company</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-gray-600">Drug</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-gray-600">Target</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-gray-600">Phase</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-gray-600">Efficacy vs SOC</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-gray-600">Rights</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-gray-600">Cash Runway</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-gray-600">Deal Likelihood</th>
                               </tr>
                             </thead>
                             <tbody>
                               {tableData.map((row) => (
-                                <tr key={row.id} className="border-b border-white/[0.05] hover:bg-white/[0.02]">
-                                  <td className="py-2.5 px-3 font-medium text-white">{row.company}</td>
-                                  <td className="py-2.5 px-3 text-white/70">{row.drug}</td>
-                                  <td className="py-2.5 px-3 text-white/60">{row.target}</td>
-                                  <td className="py-2.5 px-3 text-white/60">{row.phase}</td>
+                                <tr key={row.id} className="border-b border-gray-100 hover:bg-gray-50">
+                                  <td className="py-2.5 px-3 font-medium text-gray-900">{row.company}</td>
+                                  <td className="py-2.5 px-3 text-gray-700">{row.drug}</td>
+                                  <td className="py-2.5 px-3 text-gray-600">{row.target}</td>
+                                  <td className="py-2.5 px-3 text-gray-600">{row.phase}</td>
                                   <td className="py-2.5 px-3">
-                                    <span className="text-white/70">{row.efficacyVsSoc}</span>
-                                    <span className="text-white/50 block text-xs mt-0.5">{row.efficacyNote}</span>
+                                    <span className="text-gray-700">{row.efficacyVsSoc}</span>
+                                    <span className="text-gray-500 block text-xs mt-0.5">{row.efficacyNote}</span>
                                   </td>
                                   <td className="py-2.5 px-3">
                                     <span className={
-                                      row.rights === 'Global available' ? 'text-green-400 font-medium' :
-                                      row.rights === 'Not available' ? 'text-red-400' :
-                                      'text-yellow-400'
+                                      row.rights === 'Global available' ? 'text-green-600 font-medium' :
+                                      row.rights === 'Not available' ? 'text-red-600' :
+                                      'text-yellow-600'
                                     }>
                                       {row.rights}
                                     </span>
                                   </td>
                                   <td className="py-2.5 px-3">
-                                    <span className={parseInt(row.cashRunway) < 12 ? 'text-red-400 font-medium' : 'text-white/60'}>
+                                    <span className={parseInt(row.cashRunway) < 12 ? 'text-red-600 font-medium' : 'text-gray-600'}>
                                       {row.cashRunway}
                                     </span>
                                   </td>
                                   <td className="py-2.5 px-3">
                                     <span className={`font-medium ${
-                                      row.dealLikelihood === 'High' ? 'text-green-400' :
-                                      row.dealLikelihood === 'Medium' ? 'text-yellow-400' :
-                                      'text-white/40'
+                                      row.dealLikelihood === 'High' ? 'text-green-600' :
+                                      row.dealLikelihood === 'Medium' ? 'text-yellow-600' :
+                                      'text-gray-400'
                                     }`}>
                                       {row.dealLikelihood}
                                     </span>
@@ -1562,16 +2004,16 @@
                       ) : (
                         <div className="flex-1 flex items-center justify-center">
                           <div className="text-center">
-                            <div className="w-16 h-16 rounded-full bg-white/[0.03] border border-white/[0.08] flex items-center justify-center mx-auto mb-4">
-                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/30">
+                            <div className="w-16 h-16 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center mx-auto mb-4">
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                                 <polyline points="14 2 14 8 20 8" />
                                 <line x1="12" y1="13" x2="8" y2="13" />
                                 <line x1="16" y1="17" x2="8" y2="17" />
                               </svg>
                             </div>
-                            <p className="text-white/40 text-sm font-medium">No data available</p>
-                            <p className="text-white/30 text-xs mt-1">Configure scope to start tracking</p>
+                            <p className="text-gray-500 text-sm font-medium">No data available</p>
+                            <p className="text-gray-400 text-xs mt-1">Configure scope to start tracking</p>
                           </div>
                         </div>
                       )}
@@ -1580,20 +2022,20 @@
 
                   {activeTab === 'alerts' && (
                     <div className="h-full flex flex-col">
-                      <h3 className="text-sm font-semibold text-white mb-4">
+                      <h3 className="text-sm font-semibold text-gray-900 mb-4">
                         {config.alerts.length > 0 ? `${config.alerts.length} alert types configured` : 'Alert Monitoring'}
                       </h3>
                       {config.alerts.length > 0 ? (
                         <div className="space-y-2">
                           {config.alerts.map((alert, index) => (
-                            <div key={alert} className="p-4 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.04] transition-colors">
+                            <div key={alert} className="p-4 rounded-lg bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors">
                               <div className="flex items-center gap-3">
-                                <div className="w-2 h-2 rounded-full bg-green-400 shadow-lg shadow-green-400/40"></div>
+                                <div className="w-2 h-2 rounded-full bg-green-500 shadow-lg shadow-green-500/40"></div>
                                 <div className="flex-1">
-                                  <p className="font-medium text-white text-sm">{alert}</p>
-                                  <p className="text-white/50 text-xs mt-0.5">Real-time monitoring active</p>
+                                  <p className="font-medium text-gray-900 text-sm">{alert}</p>
+                                  <p className="text-gray-500 text-xs mt-0.5">Real-time monitoring active</p>
                                 </div>
-                                <span className="text-xs text-green-400 font-medium px-2 py-1 bg-green-400/10 rounded">Active</span>
+                                <span className="text-xs text-green-600 font-medium px-2 py-1 bg-green-100 rounded">Active</span>
                               </div>
                             </div>
                           ))}
@@ -1601,15 +2043,15 @@
                       ) : (
                         <div className="flex-1 flex items-center justify-center">
                           <div className="text-center">
-                            <div className="w-16 h-16 rounded-full bg-white/[0.03] border border-white/[0.08] flex items-center justify-center mx-auto mb-4">
-                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/30">
+                            <div className="w-16 h-16 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center mx-auto mb-4">
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
                                 <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
                                 <line x1="12" y1="9" x2="12" y2="13" />
                                 <line x1="12" y1="17" x2="12.01" y2="17" />
                               </svg>
                             </div>
-                            <p className="text-white/40 text-sm font-medium">No alerts configured</p>
-                            <p className="text-white/30 text-xs mt-1">Alerts were skipped during wizard setup</p>
+                            <p className="text-gray-500 text-sm font-medium">No alerts configured</p>
+                            <p className="text-gray-400 text-xs mt-1">Alerts were skipped during wizard setup</p>
                           </div>
                         </div>
                       )}
@@ -1618,7 +2060,7 @@
 
                   {activeTab === 'reports' && (
                     <div className="h-full flex flex-col">
-                      <h3 className="text-sm font-semibold text-white mb-4">
+                      <h3 className="text-sm font-semibold text-gray-900 mb-4">
                         {config.deliverables.length > 0 ? `${config.deliverables.length} report types configured` : 'Report Generation'}
                       </h3>
                       {config.deliverables.length > 0 ? (
@@ -1627,7 +2069,7 @@
                             const allItems = Object.values(deliverablesConfig).flatMap(cat => cat.items);
                             const item = allItems.find(i => i.id === d.id);
                             return (
-                              <div key={d.id} className="p-4 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.04] transition-colors">
+                              <div key={d.id} className="p-4 rounded-lg bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors">
                                 <div className="flex items-center gap-3">
                                   <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={accentBg}>
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1639,8 +2081,8 @@
                                     </svg>
                                   </div>
                                   <div className="flex-1">
-                                    <p className="font-medium text-white text-sm">{item?.label || d.id}</p>
-                                    <p className="text-white/50 text-xs mt-0.5">Ready to generate • {d.id === 'on-demand' ? 'On-demand' : d.id === 'weekly' ? 'Weekly schedule' : d.id === 'monthly' ? 'Monthly schedule' : 'Automated'}</p>
+                                    <p className="font-medium text-gray-900 text-sm">{item?.label || d.id}</p>
+                                    <p className="text-gray-500 text-xs mt-0.5">Ready to generate • {d.id === 'on-demand' ? 'On-demand' : d.id === 'weekly' ? 'Weekly schedule' : d.id === 'monthly' ? 'Monthly schedule' : 'Automated'}</p>
                                   </div>
                                   <button className="text-xs font-medium px-4 py-2 rounded-lg text-white hover:opacity-90 transition-all" style={accentBg}>
                                     Generate
@@ -1653,86 +2095,104 @@
                       ) : (
                         <div className="flex-1 flex items-center justify-center">
                           <div className="text-center">
-                            <div className="w-16 h-16 rounded-full bg-white/[0.03] border border-white/[0.08] flex items-center justify-center mx-auto mb-4">
-                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/30">
+                            <div className="w-16 h-16 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center mx-auto mb-4">
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                                 <polyline points="14 2 14 8 20 8" />
                               </svg>
                             </div>
-                            <p className="text-white/40 text-sm font-medium">No reports configured</p>
-                            <p className="text-white/30 text-xs mt-1">Deliverables were skipped during wizard setup</p>
+                            <p className="text-gray-500 text-sm font-medium">No reports configured</p>
+                            <p className="text-gray-400 text-xs mt-1">Deliverables were skipped during wizard setup</p>
                           </div>
                         </div>
                       )}
                     </div>
                   )}
                 </div>
-            </div>
+              </>
+            )}
+          </div>
 
-            {/* Chat Panel (20%) */}
-            <div
-              className={`border-l border-white/10 flex flex-col flex-shrink-0 transition-all duration-300 ${chatCollapsed ? 'w-10' : ''}`}
-              style={{ width: chatCollapsed ? undefined : '20%', minWidth: chatCollapsed ? undefined : '280px' }}
-            >
-                <div className={`h-12 mt-3 px-4 flex items-center flex-shrink-0 ${chatCollapsed ? 'justify-center px-0' : 'justify-between'}`}>
-                  {!chatCollapsed && (
-                    <div className="flex items-center gap-2">
-                      <div className="w-1 h-5 rounded-full" style={accentBg}></div>
-                      <span className="text-sm font-bold text-white uppercase tracking-wide">
-                        Chat
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-1">
-                    <Tooltip label={chatCollapsed ? "Expand chat" : "Collapse chat"}>
-                      <button
-                        onClick={() => setChatCollapsed(!chatCollapsed)}
-                        className="h-7 w-7 flex items-center justify-center text-white hover:opacity-70"
-                      >
-                        <CollapsePanelRightIcon size={16} />
-                      </button>
-                    </Tooltip>
-                  </div>
-                </div>
-
-                {!chatCollapsed && (
-                  <>
-                    <div className="flex-1 overflow-auto px-4 py-3 space-y-4">
-                      {chatMessages.map((msg, idx) => (
-                        msg.type === 'user' ? (
-                          <div key={idx} className="flex flex-col items-end">
-                            <div className="bg-white/10 text-white rounded-lg px-3 py-2.5 text-xs">
-                              {msg.text}
-                            </div>
-                            <span className="text-white/30 mt-1.5 text-xs">{msg.timestamp}</span>
-                          </div>
-                        ) : (
-                          <div key={idx} className="flex flex-col">
-                            <p className="text-white text-xs leading-relaxed">
-                              {msg.text}
-                            </p>
-                            <span className="text-white/30 mt-1.5 text-xs">{msg.timestamp}</span>
-                          </div>
-                        )
-                      ))}
-                    </div>
-                    <div className="p-3 border-t border-white/10">
+          {/* Chat Panel (20%) - Hidden during loading */}
+            {!isLoading && (
+              <div
+                className={`border-l border-gray-200 bg-white flex flex-col flex-shrink-0 transition-all duration-300 ${chatCollapsed ? 'w-10' : ''}`}
+                style={{ width: chatCollapsed ? undefined : '20%', minWidth: chatCollapsed ? undefined : '280px' }}
+              >
+                  <div className={`h-12 mt-3 px-4 flex items-center flex-shrink-0 ${chatCollapsed ? 'justify-center px-0' : 'justify-between'}`}>
+                    {!chatCollapsed && (
                       <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={chatInput}
-                          onChange={(e) => setChatInput(e.target.value)}
-                          placeholder="Ask a question..."
-                          className="flex-1 h-9 px-3 bg-white/[0.05] border border-white/[0.1] rounded-lg text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/20"
-                        />
-                        <button className="h-9 w-9 flex items-center justify-center text-white rounded-lg hover:opacity-90 transition-all" style={accentBg}>
-                          <Send size={14} />
-                        </button>
+                        <div className="w-1 h-5 rounded-full" style={accentBg}></div>
+                        <span className="text-sm font-bold text-gray-900 uppercase tracking-wide">
+                          Chat
+                        </span>
                       </div>
+                    )}
+                    <div className="flex items-center gap-1">
+                      {!chatCollapsed && (
+                        <>
+                          <Tooltip label="Chat history">
+                            <button className="h-7 w-7 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                              <Clock size={15} />
+                            </button>
+                          </Tooltip>
+                          <Tooltip label="New chat">
+                            <button className="h-7 w-7 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                              <Plus size={15} />
+                            </button>
+                          </Tooltip>
+                        </>
+                      )}
+                      <Tooltip label={chatCollapsed ? "Expand chat" : "Collapse chat"}>
+                        <button
+                          onClick={() => setChatCollapsed(!chatCollapsed)}
+                          className="h-7 w-7 flex items-center justify-center text-gray-600 hover:opacity-70"
+                        >
+                          <CollapsePanelRightIcon size={16} />
+                        </button>
+                      </Tooltip>
                     </div>
-                  </>
-                )}
-            </div>
+                  </div>
+
+                  {!chatCollapsed && (
+                    <>
+                      <div className="flex-1 overflow-auto px-4 py-3 space-y-4">
+                        {chatMessages.map((msg, idx) => (
+                          msg.type === 'user' ? (
+                            <div key={idx} className="flex flex-col items-end">
+                              <div className="bg-gray-100 text-gray-900 rounded-lg px-3 py-2.5 text-xs">
+                                {msg.text}
+                              </div>
+                              <span className="text-gray-400 mt-1.5 text-xs">{msg.timestamp}</span>
+                            </div>
+                          ) : (
+                            <div key={idx} className="flex flex-col">
+                              <p className="text-gray-700 text-xs leading-relaxed">
+                                {msg.text}
+                              </p>
+                              <span className="text-gray-400 mt-1.5 text-xs">{msg.timestamp}</span>
+                            </div>
+                          )
+                        ))}
+                      </div>
+                      <div className="p-3 border-t border-gray-200">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={chatInput}
+                            onChange={(e) => setChatInput(e.target.value)}
+                            placeholder="Ask a question..."
+                            className="flex-1 h-9 px-3 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-300"
+                          />
+                          <button className="h-9 w-9 flex items-center justify-center text-white rounded-lg hover:opacity-90 transition-all" style={accentBg}>
+                            <Send size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+              </div>
+            )}
         </div>
       );
     }
